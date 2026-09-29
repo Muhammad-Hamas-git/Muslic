@@ -1,0 +1,21 @@
+Upgrading build.gradle.kts
+Running Gradle task 'assembleRelease'...                        
+WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): on_audio_query_android
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 5132 bytes (99.7% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+"Install CMake 3.22.1 v.3.22.1" finished.
+Caught exception: Already watching path: /home/runner/work/Muslic/Muslic/android
+Running Gradle task 'assembleRelease'...                          320.1s
+✓ Built build/app/outputs/flutter-apk/app-release.apk (55.0MB)
