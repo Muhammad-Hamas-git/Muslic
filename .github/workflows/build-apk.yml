@@ -1,0 +1,65 @@
+name: Build müslic APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Generate the platform scaffolding around the shipped sources.
+      # flutter create overwrites the manifest, so ours is restored after.
+      - name: Scaffold platform files
+        run: |
+          cp android/app/src/main/AndroidManifest.xml /tmp/Manifest.xml
+          flutter create . --project-name muslic --org app.muslic --platforms android
+          cp /tmp/Manifest.xml android/app/src/main/AndroidManifest.xml
+          rm -f test/widget_test.dart
+
+      # just_audio_background needs minSdk 23.
+      - name: Raise minSdk to 23
+        run: |
+          set -e
+          for f in android/app/build.gradle android/app/build.gradle.kts; do
+            if [ -f "$f" ]; then
+              sed -i 's/flutter\.minSdkVersion/23/g' "$f"
+            fi
+          done
+
+      # Compatibility fixes for older plugins on current Gradle:
+      # missing namespace, and Java/Kotlin JVM target mismatch.
+      - name: Apply plugin compatibility fixes
+        run: |
+          set -e
+          if [ -f android/build.gradle.kts ]; then
+            echo 'apply(from = "namespace-fix.gradle")' >> android/build.gradle.kts
+          else
+            echo 'apply from: "namespace-fix.gradle"' >> android/build.gradle
+          fi
+          echo 'kotlin.jvm.target.validation.mode=IGNORE' >> android/gradle.properties
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: muslic-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

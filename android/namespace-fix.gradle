@@ -1,0 +1,10 @@
+// Some older plugins (on_audio_query) do not declare an Android namespace,
+// which newer Android Gradle Plugin versions require. This assigns one
+// from the plugin's group id when it is missing.
+subprojects { p ->
+    p.plugins.withId("com.android.library") {
+        if (p.android.namespace == null) {
+            p.android.namespace = p.group.toString()
+        }
+    }
+}

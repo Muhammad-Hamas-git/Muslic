@@ -1,0 +1,36 @@
+name: muslic
+description: "müslic, a warm, fast local music player."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Playback engine: gapless, speed, pitch, loudness enhancer, error recovery.
+  just_audio: ^0.9.42
+  # Background playback + lock screen / notification shade media session.
+  just_audio_background: ^0.0.1-beta.13
+  # MediaStore querying: songs, duration, album art, dates.
+  on_audio_query: ^2.9.0
+  # Runtime permissions (READ_MEDIA_AUDIO on 13+, READ_EXTERNAL_STORAGE below).
+  permission_handler: ^11.3.1
+  # Settings persistence.
+  shared_preferences: ^2.3.2
+  # Simple, fast state management.
+  provider: ^6.1.2
+  # Native folder picker for allow/ban lists.
+  file_picker: ^8.1.2
+  # Marquee for long titles in the player.
+  marquee: ^2.3.0
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
