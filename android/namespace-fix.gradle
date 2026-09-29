@@ -1,10 +1,14 @@
-// Some older plugins (on_audio_query) do not declare an Android namespace,
-// which newer Android Gradle Plugin versions require. This assigns one
-// from the plugin's group id when it is missing.
+// Compatibility fixes for older Flutter plugins (on_audio_query, file_picker)
+// on current Android Gradle Plugin versions:
+//  1. assign a namespace when a plugin does not declare one
+//  2. compile every plugin against API 36, which newer AndroidX libraries require
 subprojects { p ->
     p.plugins.withId("com.android.library") {
         if (p.android.namespace == null) {
             p.android.namespace = p.group.toString()
+        }
+        p.afterEvaluate {
+            p.android.compileSdkVersion 36
         }
     }
 }

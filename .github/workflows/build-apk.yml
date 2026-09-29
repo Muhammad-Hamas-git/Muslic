@@ -38,6 +38,7 @@ jobs:
         run: |
           set -e
           for f in android/app/build.gradle android/app/build.gradle.kts; do
+            [ -f "$f" ] && sed -i "s/flutter\.compileSdkVersion/36/g" "$f"
             if [ -f "$f" ]; then
               sed -i 's/flutter\.minSdkVersion/23/g' "$f"
             fi
