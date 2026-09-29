@@ -78,10 +78,18 @@ jobs:
           git add -A && git commit -qm "Build log for ${GITHUB_SHA}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-logs
 
+      # Smaller APK for modern phones (64-bit ARM only).
+      - name: Build arm64 APK
+        shell: bash
+        run: |
+          mkdir -p /tmp/out && cp build/app/outputs/flutter-apk/app-release.apk /tmp/out/muslic-universal.apk
+          flutter build apk --release --split-per-abi --target-platform android-arm64
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk /tmp/out/muslic-arm64.apk
+
       - name: Publish APK to the apk branch
         shell: bash
         run: |
-          mkdir -p /tmp/apk && cp build/app/outputs/flutter-apk/app-release.apk /tmp/apk/muslic.apk
+          mkdir -p /tmp/apk && cp /tmp/out/muslic-arm64.apk /tmp/apk/muslic.apk
           cd /tmp/apk
           git init -q && git checkout -q -b apk
           git config user.name "müslic CI" && git config user.email "ci@users.noreply.github.com"
@@ -93,10 +101,12 @@ jobs:
         with:
           tag_name: build-${{ github.run_number }}
           name: müslic build ${{ github.run_number }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            /tmp/out/muslic-arm64.apk
+            /tmp/out/muslic-universal.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: muslic-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: /tmp/out/*.apk
