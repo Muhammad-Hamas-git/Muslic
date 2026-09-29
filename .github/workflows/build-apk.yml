@@ -5,13 +5,16 @@ on:
     branches: [main, master]
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -56,7 +59,40 @@ jobs:
         run: flutter pub get
 
       - name: Build release APK
-        run: flutter build apk --release
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee build.log
+
+      # Publish the build log to the ci-logs branch so it can be read
+      # with plain git, even when a run fails.
+      - name: Publish build log
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/logs && cp build.log /tmp/logs/ 2>/dev/null || echo "no build log" > /tmp/logs/build.log
+          cd /tmp/logs
+          git init -q && git checkout -q -b ci-logs
+          git config user.name "müslic CI" && git config user.email "ci@users.noreply.github.com"
+          git add -A && git commit -qm "Build log for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-logs
+
+      - name: Publish APK to the apk branch
+        shell: bash
+        run: |
+          mkdir -p /tmp/apk && cp build/app/outputs/flutter-apk/app-release.apk /tmp/apk/muslic.apk
+          cd /tmp/apk
+          git init -q && git checkout -q -b apk
+          git config user.name "müslic CI" && git config user.email "ci@users.noreply.github.com"
+          git add -A && git commit -qm "APK for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" apk
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: müslic build ${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
