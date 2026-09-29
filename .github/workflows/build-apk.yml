@@ -50,9 +50,9 @@ jobs:
         run: |
           set -e
           if [ -f android/build.gradle.kts ]; then
-            echo 'apply(from = "namespace-fix.gradle")' >> android/build.gradle.kts
+            sed -i '1i apply(from = "namespace-fix.gradle")' android/build.gradle.kts
           else
-            echo 'apply from: "namespace-fix.gradle"' >> android/build.gradle
+            sed -i '1i apply from: "namespace-fix.gradle"' android/build.gradle
           fi
           echo 'kotlin.jvm.target.validation.mode=IGNORE' >> android/gradle.properties
 

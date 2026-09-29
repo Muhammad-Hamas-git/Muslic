@@ -1,13 +1,16 @@
-// Compatibility fixes for older Flutter plugins (on_audio_query, file_picker)
-// on current Android Gradle Plugin versions:
+// Compatibility fixes for older Flutter plugins (on_audio_query, file_picker,
+// audio_service) on current Android Gradle Plugin versions:
 //  1. assign a namespace when a plugin does not declare one
 //  2. compile every plugin against API 36, which newer AndroidX libraries require
+// This file is applied at the top of android/build.gradle(.kts), so these
+// hooks run before each plugin project is configured by AGP.
 subprojects { p ->
-    p.plugins.withId("com.android.library") {
-        if (p.android.namespace == null) {
-            p.android.namespace = p.group.toString()
-        }
-        p.afterEvaluate {
+    if (p.state.executed) return
+    p.afterEvaluate {
+        if (p.plugins.hasPlugin("com.android.library")) {
+            if (p.android.namespace == null) {
+                p.android.namespace = p.group.toString()
+            }
             p.android.compileSdkVersion 36
         }
     }
