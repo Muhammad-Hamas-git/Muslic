@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/library_screen.dart';
+import 'services/artwork_cache.dart';
 import 'state/library_controller.dart';
 import 'state/player_controller.dart';
 import 'state/settings_controller.dart';
+import 'ui/design.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,24 +23,43 @@ Future<void> main() async {
     preloadArtwork: true,
   );
 
-  final prefs = await SharedPreferences.getInstance();
-  runApp(MuslicApp(prefs: prefs));
+  // White app with dark status bar icons, drawn edge to edge.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
+  final results = await Future.wait([
+    SharedPreferences.getInstance(),
+    ArtworkCache.open(),
+  ]);
+  runApp(MuslicApp(
+    prefs: results[0] as SharedPreferences,
+    artwork: results[1] as ArtworkCache,
+  ));
 }
 
 class MuslicApp extends StatelessWidget {
-  const MuslicApp({super.key, required this.prefs});
+  const MuslicApp({super.key, required this.prefs, required this.artwork});
   final SharedPreferences prefs;
+  final ArtworkCache artwork;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider.value(value: artwork),
         ChangeNotifierProvider(create: (_) => SettingsController(prefs)),
         ChangeNotifierProvider(
-          create: (c) => LibraryController(c.read<SettingsController>()),
+          create: (c) =>
+              LibraryController(c.read<SettingsController>(), artwork),
         ),
         ChangeNotifierProvider(
-          create: (c) => PlayerController(c.read<SettingsController>()),
+          create: (c) =>
+              PlayerController(c.read<SettingsController>(), artwork),
         ),
       ],
       child: MaterialApp(
@@ -49,40 +71,24 @@ class MuslicApp extends StatelessWidget {
     );
   }
 
-  /// müslic wears "toasted oat": deep roasted-brown surfaces with a warm
-  /// honey-gold accent. Deliberately not another purple Material app.
+  /// Light theme matching the Figma file: white pages, near-black ink,
+  /// Inter throughout. Used by the settings screen and dialogs; the
+  /// library and player draw their own Figma styling.
   ThemeData _theme() {
-    const honey = Color(0xFFE8A94C);
-    const roast = Color(0xFF171210);
-
     final scheme = ColorScheme.fromSeed(
-      seedColor: honey,
-      brightness: Brightness.dark,
-      surface: roast,
-    ).copyWith(
-      primary: honey,
-      surfaceContainer: const Color(0xFF221B17),
-      surfaceContainerHigh: const Color(0xFF2A211C),
-      surfaceContainerHighest: const Color(0xFF332822),
-    );
+      seedColor: Palette.ink,
+      brightness: Brightness.light,
+      surface: Colors.white,
+    ).copyWith(primary: Palette.ink, secondary: Palette.blue);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: roast,
-      fontFamilyFallback: const ['Roboto'],
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-      ),
-      sliderTheme: SliderThemeData(
-        activeTrackColor: honey,
-        thumbColor: honey,
-        inactiveTrackColor: Colors.white.withValues(alpha: 0.12),
-        trackHeight: 3.5,
-      ),
+      fontFamily: 'Inter',
+      scaffoldBackgroundColor: Colors.white,
       cardTheme: const CardThemeData(
         elevation: 0,
+        color: Color(0xFFF4F4F2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
         ),

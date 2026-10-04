@@ -2,8 +2,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/artwork_cache.dart';
 import '../state/library_controller.dart';
 import '../state/settings_controller.dart';
+import '../widgets/muslic_app_bar.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -15,10 +17,53 @@ class SettingsScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          MuslicAppBar(
+            leading: AppBarGlyph(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Back',
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ),
+          Expanded(
+            child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+            child: Text('Settings',
+                style: Theme.of(context).textTheme.headlineSmall),
+          ),
+          _SectionHeader('Library order'),
+          RadioListTile<LibrarySort>(
+            title: const Text('Sort by name'),
+            value: LibrarySort.name,
+            groupValue: settings.sort,
+            onChanged: (v) =>
+                settings.setSort(v!, ascending: v == LibrarySort.name),
+          ),
+          RadioListTile<LibrarySort>(
+            title: const Text('Sort by date updated'),
+            value: LibrarySort.dateModified,
+            groupValue: settings.sort,
+            onChanged: (v) =>
+                settings.setSort(v!, ascending: v == LibrarySort.name),
+          ),
+          SwitchListTile(
+            title: const Text('Reverse order'),
+            subtitle: Text(settings.sort == LibrarySort.name
+                ? 'Z to A instead of A to Z'
+                : 'Oldest first instead of newest first'),
+            // Date sort shows newest first by default, so "reversed" means
+            // ascending there.
+            value: settings.sort == LibrarySort.name
+                ? !settings.sortAscending
+                : settings.sortAscending,
+            onChanged: (_) => settings.toggleSortDirection(),
+          ),
+          const Divider(height: 32),
           _SectionHeader('Music sources'),
           _FolderList(
             title: 'Only scan these folders',
@@ -77,8 +122,8 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader('Playback'),
           SwitchListTile(
             title: const Text('Remember speed, pitch and boost'),
-            subtitle:
-                const Text('Restore your playback lab settings on launch.'),
+            subtitle: const Text(
+                'Keep your equalizer panel settings between launches.'),
             value: settings.rememberPlaybackSettings,
             onChanged: settings.setRememberPlaybackSettings,
           ),
@@ -93,6 +138,10 @@ class SettingsScreen extends StatelessWidget {
                 const SnackBar(content: Text('Rescanning library')),
               );
             },
+          ),
+          const _ArtworkCacheTile(),
+        ],
+      ),
           ),
         ],
       ),
@@ -320,6 +369,36 @@ class _DurationTile extends StatelessWidget {
               .textTheme
               .labelLarge
               ?.copyWith(color: Theme.of(context).colorScheme.primary)),
+    );
+  }
+}
+
+
+/// Shows background blur progress and lets the user rebuild the cache.
+class _ArtworkCacheTile extends StatelessWidget {
+  const _ArtworkCacheTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final cache = context.read<ArtworkCache>();
+    return ValueListenableBuilder<int>(
+      valueListenable: cache.pending,
+      builder: (context, pending, _) => ListTile(
+        leading: const Icon(Icons.image_outlined),
+        title: const Text('Rebuild artwork cache'),
+        subtitle: Text(pending > 0
+            ? 'Preparing backgrounds: $pending songs left'
+            : 'All album art and blurred backgrounds are ready.'),
+        onTap: () async {
+          final library = context.read<LibraryController>();
+          final messenger = ScaffoldMessenger.of(context);
+          await cache.clear();
+          await library.scan();
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Rebuilding artwork cache')),
+          );
+        },
+      ),
     );
   }
 }

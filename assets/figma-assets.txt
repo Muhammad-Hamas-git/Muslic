@@ -1,4 +1,4 @@
-# file name in assets/ui/        Figma asset URL (valid 7 days from 2026-10-04)
+# file name in assets/ui_source/        Figma asset URL (valid 7 days from 2026-10-04)
 play.png        https://www.figma.com/api/mcp/asset/9375e346-0d07-45da-9b6f-f447486c11da.png
 mini_next.png   https://www.figma.com/api/mcp/asset/4c33a68b-ea02-467d-8e2d-c392d493eb33.png
 mini_prev.png   https://www.figma.com/api/mcp/asset/7a9992c8-b066-472f-8b0f-e95de78395fe.png

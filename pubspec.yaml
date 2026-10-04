@@ -26,6 +26,10 @@ dependencies:
   file_picker: ^8.1.2
   # Marquee for long titles in the player.
   marquee: ^2.3.0
+  # Blurring album art for the cached player backgrounds.
+  image: ^4.2.0
+  # App storage folder for the artwork cache.
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_lints: ^4.0.0
@@ -34,3 +38,14 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/ui/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: KumbhSans
+      fonts:
+        - asset: assets/fonts/KumbhSans.ttf

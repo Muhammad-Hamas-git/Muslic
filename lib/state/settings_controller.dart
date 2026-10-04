@@ -28,7 +28,6 @@ class SettingsController extends ChangeNotifier {
   // ---- Library view ----
   LibrarySort sort = LibrarySort.name;
   bool sortAscending = true;
-  int gridColumns = 2;
 
   // ---- Playback ----
   bool resumeOnHeadphones = false;
@@ -36,6 +35,10 @@ class SettingsController extends ChangeNotifier {
   double lastSpeed = 1.0;
   double lastPitch = 1.0;
   double lastGainDb = 0.0;
+
+  // ---- Equalizer ----
+  bool eqEnabled = true;
+  List<double> eqGains = []; // dB per band, applied once bands are known
 
   void _load() {
     allowedFolders = _prefs.getStringList('allowedFolders') ?? [];
@@ -46,13 +49,16 @@ class SettingsController extends ChangeNotifier {
     hideWhatsAppAudio = _prefs.getBool('hideWhatsAppAudio') ?? true;
     sort = LibrarySort.values[_prefs.getInt('sort') ?? 0];
     sortAscending = _prefs.getBool('sortAscending') ?? true;
-    gridColumns = _prefs.getInt('gridColumns') ?? 2;
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
-    lastSpeed = _prefs.getDouble('lastSpeed') ?? 1.0;
-    lastPitch = _prefs.getDouble('lastPitch') ?? 1.0;
+    lastSpeed = (_prefs.getDouble('lastSpeed') ?? 1.0).clamp(0.5, 2.0);
+    lastPitch = (_prefs.getDouble('lastPitch') ?? 1.0).clamp(0.5, 2.0);
     lastGainDb = _prefs.getDouble('lastGainDb') ?? 0.0;
+    eqEnabled = _prefs.getBool('eqEnabled') ?? true;
+    eqGains = (_prefs.getStringList('eqGains') ?? [])
+        .map((e) => double.tryParse(e) ?? 0.0)
+        .toList();
   }
 
   Future<void> _save() async {
@@ -64,13 +70,15 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setBool('hideWhatsAppAudio', hideWhatsAppAudio);
     await _prefs.setInt('sort', sort.index);
     await _prefs.setBool('sortAscending', sortAscending);
-    await _prefs.setInt('gridColumns', gridColumns);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
     await _prefs.setDouble('lastSpeed', lastSpeed);
     await _prefs.setDouble('lastPitch', lastPitch);
     await _prefs.setDouble('lastGainDb', lastGainDb);
+    await _prefs.setBool('eqEnabled', eqEnabled);
+    await _prefs.setStringList(
+        'eqGains', [for (final g in eqGains) g.toStringAsFixed(2)]);
   }
 
   // ---- Mutators (each persists and notifies) ----
@@ -128,11 +136,6 @@ class SettingsController extends ChangeNotifier {
     _commit();
   }
 
-  void setGridColumns(int c) {
-    gridColumns = c.clamp(1, 4);
-    _commit();
-  }
-
   void setRememberPlaybackSettings(bool v) {
     rememberPlaybackSettings = v;
     _commit();
@@ -144,6 +147,12 @@ class SettingsController extends ChangeNotifier {
     lastPitch = pitch;
     lastGainDb = gainDb;
     _save(); // no notify needed, purely persistence
+  }
+
+  void saveEqualizer({required bool enabled, required List<double> gains}) {
+    eqEnabled = enabled;
+    eqGains = List.of(gains);
+    _save();
   }
 
   void _commit() {

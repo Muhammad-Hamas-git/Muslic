@@ -3,17 +3,19 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/track.dart';
+import '../services/artwork_cache.dart';
 import 'settings_controller.dart';
 
 enum LibraryStatus { idle, noPermission, scanning, ready, empty, error }
 
 /// Owns the scanned library and applies the user's filters and sort.
 class LibraryController extends ChangeNotifier {
-  LibraryController(this._settings) {
+  LibraryController(this._settings, this._art) {
     _settings.addListener(_onSettingsChanged);
   }
 
   final SettingsController _settings;
+  final ArtworkCache _art;
   final OnAudioQuery _query = OnAudioQuery();
 
   LibraryStatus status = LibraryStatus.idle;
@@ -72,6 +74,9 @@ class LibraryController extends ChangeNotifier {
           .toList();
 
       _applyFilters();
+      // Pre-blur backgrounds for what is visible first, then the rest.
+      _art.warm(tracks);
+      _art.warm(_all);
     } catch (e) {
       status = LibraryStatus.error;
       errorMessage = e.toString();

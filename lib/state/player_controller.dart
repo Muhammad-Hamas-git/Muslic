@@ -5,20 +5,22 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 import '../models/track.dart';
+import '../services/artwork_cache.dart';
 import 'settings_controller.dart';
 
 /// Wraps a single app-wide [AudioPlayer] with:
-///  - queue management from the library grid
-///  - variable speed (0.25x–3x) and independent pitch (0.5x–2x)
-///  - clip-safe amplification via Android's LoudnessEnhancer (its built-in
-///    limiter compresses peaks instead of hard-clipping)
-///  - background play + media notification via just_audio_background
+///  - queue management from the library carousel
+///  - speed and independent pitch, both 0.5x to 2x
+///  - a system equalizer (Android's built-in bands, usually 5)
+///  - clip-safe boost via Android's LoudnessEnhancer, whose limiter
+///    compresses peaks instead of hard-clipping
+///  - background play and the media notification via just_audio_background
 class PlayerController extends ChangeNotifier {
-  PlayerController(this._settings) {
-    _loudness = AndroidLoudnessEnhancer();
-    _loudness.setEnabled(true);
+  PlayerController(this._settings, this._art) {
+    _loudness = AndroidLoudnessEnhancer()..setEnabled(true);
+    _eq = AndroidEqualizer()..setEnabled(_settings.eqEnabled);
     _player = AudioPlayer(
-      audioPipeline: AudioPipeline(androidAudioEffects: [_loudness]),
+      audioPipeline: AudioPipeline(androidAudioEffects: [_loudness, _eq]),
       handleInterruptions: true,
     );
 
@@ -27,11 +29,13 @@ class PlayerController extends ChangeNotifier {
       pitch = _settings.lastPitch;
       gainDb = _settings.lastGainDb;
     }
+    eqEnabled = _settings.eqEnabled;
 
     _subs.add(_player.playerStateStream.listen((_) => notifyListeners()));
     _subs.add(_player.currentIndexStream.listen((_) => notifyListeners()));
     _subs.add(_player.loopModeStream.listen((_) => notifyListeners()));
-    _subs.add(_player.shuffleModeEnabledStream.listen((_) => notifyListeners()));
+    _subs.add(
+        _player.shuffleModeEnabledStream.listen((_) => notifyListeners()));
     _subs.add(_player.playbackEventStream.listen((_) {},
         onError: (Object e, StackTrace st) {
       // Keep the session alive on a bad file; skip forward if possible.
@@ -40,15 +44,27 @@ class PlayerController extends ChangeNotifier {
     }));
   }
 
+  static const double minRate = 0.5;
+  static const double maxRate = 2.0;
+
   final SettingsController _settings;
+  final ArtworkCache _art;
   late final AudioPlayer _player;
   late final AndroidLoudnessEnhancer _loudness;
+  late final AndroidEqualizer _eq;
   final List<StreamSubscription> _subs = [];
 
   List<Track> queue = [];
   double speed = 1.0;
   double pitch = 1.0;
   double gainDb = 0.0; // 0..+12 dB
+
+  // Equalizer state. Bands are only known once audio has been loaded.
+  bool eqEnabled = true;
+  List<AndroidEqualizerBand> eqBands = const [];
+  double eqMinDb = -15;
+  double eqMaxDb = 15;
+  bool get eqReady => eqBands.isNotEmpty;
 
   AudioPlayer get player => _player;
   bool get playing => _player.playing;
@@ -59,7 +75,8 @@ class PlayerController extends ChangeNotifier {
   }
 
   Stream<Duration> get positionStream => _player.positionStream;
-  Duration get duration => _player.duration ?? current?.duration ?? Duration.zero;
+  Duration get duration =>
+      _player.duration ?? current?.duration ?? Duration.zero;
 
   /// Load [tracks] as the queue and start playback at [startIndex].
   Future<void> playQueue(List<Track> tracks, int startIndex) async {
@@ -74,8 +91,7 @@ class PlayerController extends ChangeNotifier {
             artist: t.artist,
             album: t.album,
             duration: t.duration,
-            artUri: Uri.parse(
-                'content://media/external/audio/media/${t.id}/albumart'),
+            artUri: _artUri(t),
           ),
         ),
     ];
@@ -87,22 +103,70 @@ class PlayerController extends ChangeNotifier {
       );
       await _applyParams();
       _player.play();
+      unawaited(_loadEqualizer());
     } catch (e) {
       debugPrint('müslic: failed to set queue: $e');
     }
     notifyListeners();
   }
 
+  /// Notification / lock screen art. Uses the cached JPEG when present,
+  /// which works on every Android version; the media-store URI is a
+  /// fallback that only older versions resolve.
+  Uri _artUri(Track t) {
+    final f = _art.sharpIfReady(t);
+    if (f != null) return Uri.file(f.path);
+    _art.sharpFile(t); // warm it for next time
+    return Uri.parse('content://media/external/audio/media/${t.id}/albumart');
+  }
+
   Future<void> _applyParams() async {
     await _player.setSpeed(speed);
     await _player.setPitch(pitch);
-    _setGain(gainDb);
+    _loudness.setTargetGain(gainDb);
   }
 
-  // just_audio's AndroidLoudnessEnhancer.setTargetGain takes gain in decibels
-  // as a double; the platform side converts to millibels for the Android
-  // LoudnessEnhancer effect, whose internal limiter prevents hard clipping.
-  void _setGain(double db) => _loudness.setTargetGain(db);
+  Future<void> _loadEqualizer() async {
+    if (eqReady) return;
+    try {
+      final params = await _eq.parameters;
+      eqMinDb = params.minDecibels;
+      eqMaxDb = params.maxDecibels;
+      eqBands = params.bands;
+      final saved = _settings.eqGains;
+      for (var i = 0; i < eqBands.length && i < saved.length; i++) {
+        await eqBands[i].setGain(saved[i].clamp(eqMinDb, eqMaxDb));
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('müslic: equalizer unavailable: $e');
+    }
+  }
+
+  Future<void> setBandGain(int band, double db) async {
+    if (band < 0 || band >= eqBands.length) return;
+    await eqBands[band].setGain(db.clamp(eqMinDb, eqMaxDb));
+    _persistEq();
+    notifyListeners();
+  }
+
+  Future<void> setEqEnabled(bool v) async {
+    eqEnabled = v;
+    await _eq.setEnabled(v);
+    _persistEq();
+    notifyListeners();
+  }
+
+  Future<void> resetEqualizer() async {
+    for (final b in eqBands) {
+      await b.setGain(0);
+    }
+    _persistEq();
+    notifyListeners();
+  }
+
+  void _persistEq() => _settings.saveEqualizer(
+      enabled: eqEnabled, gains: [for (final b in eqBands) b.gain]);
 
   Future<void> togglePlay() async {
     playing ? await _player.pause() : _player.play();
@@ -135,14 +199,14 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> setSpeed(double v) async {
-    speed = v.clamp(0.25, 3.0);
+    speed = v.clamp(minRate, maxRate);
     await _player.setSpeed(speed);
     _persist();
     notifyListeners();
   }
 
   Future<void> setPitch(double v) async {
-    pitch = v.clamp(0.5, 2.0);
+    pitch = v.clamp(minRate, maxRate);
     await _player.setPitch(pitch);
     _persist();
     notifyListeners();
@@ -150,17 +214,16 @@ class PlayerController extends ChangeNotifier {
 
   void setGainDb(double v) {
     gainDb = v.clamp(0.0, 12.0);
-    _setGain(gainDb);
+    _loudness.setTargetGain(gainDb);
     _persist();
     notifyListeners();
   }
 
-  Future<void> resetAdvanced() async {
+  Future<void> resetRates() async {
     speed = 1.0;
     pitch = 1.0;
     gainDb = 0.0;
     await _applyParams();
-    _setGain(0);
     _persist();
     notifyListeners();
   }

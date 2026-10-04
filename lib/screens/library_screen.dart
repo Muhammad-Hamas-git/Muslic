@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/ui_tuning.dart';
 import '../state/library_controller.dart';
 import '../state/player_controller.dart';
-import '../state/settings_controller.dart';
-import '../widgets/artwork.dart';
-import '../widgets/mini_player.dart';
+import '../ui/design.dart';
+import '../widgets/muslic_app_bar.dart';
+import '../widgets/player_shell.dart';
+import '../widgets/song_carousel.dart';
 import 'settings_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -15,413 +17,324 @@ class LibraryScreen extends StatefulWidget {
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> {
+class _LibraryScreenState extends State<LibraryScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _expansion =
+      AnimationController(vsync: this, duration: PlayerMotion.expand);
   final _searchCtrl = TextEditingController();
+  final _searchFocus = FocusNode();
   bool _searching = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      UiAssets.precacheAll(context);
       context.read<LibraryController>().scan();
     });
   }
 
   @override
   void dispose() {
+    _expansion.dispose();
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    final library = context.read<LibraryController>();
+    setState(() {
+      _searching = !_searching;
+      if (!_searching) {
+        _searchCtrl.clear();
+        library.setSearch('');
+        _searchFocus.unfocus();
+      } else {
+        _searchFocus.requestFocus();
+      }
+    });
+  }
+
+  void _onSelect(int index) {
+    final library = context.read<LibraryController>();
+    final player = context.read<PlayerController>();
+    final track = library.tracks[index];
+    if (player.current?.id == track.id) {
+      PlayerShell.open(_expansion);
+    } else {
+      player.playQueue(library.tracks, index);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final library = context.watch<LibraryController>();
-    final settings = context.watch<SettingsController>();
-    final scheme = Theme.of(context).colorScheme;
+    final hasPlayer =
+        context.select<PlayerController, bool>((p) => p.current != null);
+    final f = Fg.of(context);
+    final pad = MediaQuery.paddingOf(context);
+    final size = MediaQuery.sizeOf(context);
+    final appBarBottom = MuslicAppBar.bottom(context);
+    final miniTop = size.height - pad.bottom - f(54 + 186);
 
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              titleSpacing: 20,
-              title: _searching
-                  ? TextField(
-                      controller: _searchCtrl,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Search title, artist, album',
-                        border: InputBorder.none,
-                      ),
-                      onChanged: library.setSearch,
-                    )
-                  : Text('müslic',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                              color: scheme.primary)),
-              actions: [
-                IconButton(
-                  tooltip: _searching ? 'Close search' : 'Search',
-                  icon: Icon(
-                      _searching ? Icons.close_rounded : Icons.search_rounded),
-                  onPressed: () {
-                    setState(() {
-                      if (_searching) {
-                        _searchCtrl.clear();
-                        library.setSearch('');
-                      }
-                      _searching = !_searching;
-                    });
-                  },
-                ),
-                _SortMenu(settings: settings),
-                IconButton(
-                  tooltip: 'Settings',
-                  icon: const Icon(Icons.tune_rounded),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const SettingsScreen()),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            if (library.status == LibraryStatus.ready)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                sliver: SliverToBoxAdapter(
-                  child: Text(
-                    '${library.tracks.length} tracks',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-                ),
-              ),
-            ..._body(context, library, settings),
-            const SliverToBoxAdapter(child: SizedBox(height: 110)),
-          ],
-        ),
-      ),
-      bottomNavigationBar: const MiniPlayer(),
-    );
-  }
-
-  List<Widget> _body(BuildContext context, LibraryController library,
-      SettingsController settings) {
-    switch (library.status) {
-      case LibraryStatus.idle:
-      case LibraryStatus.scanning:
-        return const [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          )
-        ];
-      case LibraryStatus.noPermission:
-        return [
-          _message(
-            context,
-            icon: Icons.lock_outline_rounded,
-            title: 'müslic needs access to your audio files',
-            body:
-                'Grant the audio permission to scan your library. Nothing leaves your device.',
-            action: FilledButton(
-              onPressed: library.scan,
-              child: const Text('Grant access'),
-            ),
-          )
-        ];
-      case LibraryStatus.empty:
-        return [
-          _message(
-            context,
-            icon: Icons.library_music_outlined,
-            title: 'No tracks found',
-            body:
-                'No audio matched your filters. Loosen the folder or length rules in settings, or add music to your device.',
-            action: OutlinedButton(
-              onPressed: library.scan,
-              child: const Text('Rescan'),
-            ),
-          )
-        ];
-      case LibraryStatus.error:
-        return [
-          _message(
-            context,
-            icon: Icons.error_outline_rounded,
-            title: 'Scan failed',
-            body: library.errorMessage ?? 'Unknown error.',
-            action: FilledButton(
-                onPressed: library.scan, child: const Text('Try again')),
-          )
-        ];
-      case LibraryStatus.ready:
-        if (library.tracks.isEmpty) {
-          return [
-            _message(
-              context,
-              icon: Icons.filter_alt_off_rounded,
-              title: 'Everything got filtered out',
-              body:
-                  'Your folder or length rules hide every track. Adjust them in settings or clear the search.',
-              action: OutlinedButton(
-                onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen())),
-                child: const Text('Open settings'),
-              ),
-            )
-          ];
-        }
-        return [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: settings.gridColumns,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: settings.gridColumns == 1 ? 3.4 : 0.78,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                childCount: library.tracks.length,
-                (context, i) => _TrackCard(index: i),
-              ),
-            ),
-          ),
-        ];
-    }
-  }
-
-  Widget _message(BuildContext context,
-      {required IconData icon,
-      required String title,
-      required String body,
-      required Widget action}) {
-    return SliverFillRemaining(
-      hasScrollBody: false,
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                size: 56, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(body,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            action,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SortMenu extends StatelessWidget {
-  const _SortMenu({required this.settings});
-  final SettingsController settings;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'Sort',
-      icon: const Icon(Icons.sort_rounded),
-      onSelected: (v) {
-        switch (v) {
-          case 'name':
-            settings.setSort(LibrarySort.name);
-          case 'date':
-            settings.setSort(LibrarySort.dateModified);
-          case 'dir':
-            settings.toggleSortDirection();
-          case 'cols1':
-            settings.setGridColumns(1);
-          case 'cols2':
-            settings.setGridColumns(2);
-          case 'cols3':
-            settings.setGridColumns(3);
-        }
-      },
-      itemBuilder: (context) => [
-        CheckedPopupMenuItem(
-          value: 'name',
-          checked: settings.sort == LibrarySort.name,
-          child: const Text('Sort by name'),
-        ),
-        CheckedPopupMenuItem(
-          value: 'date',
-          checked: settings.sort == LibrarySort.dateModified,
-          child: const Text('Sort by date updated'),
-        ),
-        PopupMenuItem(
-          value: 'dir',
-          child: Row(children: [
-            Icon(settings.sortAscending
-                ? Icons.arrow_upward_rounded
-                : Icons.arrow_downward_rounded),
-            const SizedBox(width: 8),
-            Text(settings.sortAscending ? 'Ascending' : 'Descending'),
-          ]),
-        ),
-        const PopupMenuDivider(),
-        CheckedPopupMenuItem(
-            value: 'cols1',
-            checked: settings.gridColumns == 1,
-            child: const Text('List view')),
-        CheckedPopupMenuItem(
-            value: 'cols2',
-            checked: settings.gridColumns == 2,
-            child: const Text('Grid · 2 columns')),
-        CheckedPopupMenuItem(
-            value: 'cols3',
-            checked: settings.gridColumns == 3,
-            child: const Text('Grid · 3 columns')),
-      ],
-    );
-  }
-}
-
-class _TrackCard extends StatelessWidget {
-  const _TrackCard({required this.index});
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final library = context.read<LibraryController>();
-    final player = context.watch<PlayerController>();
-    final settings = context.read<SettingsController>();
-    final track = library.tracks[index];
-    final isCurrent = player.current?.id == track.id;
-    final scheme = Theme.of(context).colorScheme;
-    final listMode = settings.gridColumns == 1;
-
-    final card = Material(
-      color: isCurrent ? scheme.primaryContainer.withValues(alpha: 0.35) : scheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context
-            .read<PlayerController>()
-            .playQueue(library.tracks, index),
-        child: listMode ? _listChild(context, track, scheme) : _gridChild(context, track, scheme),
-      ),
-    );
-    return card;
-  }
-
-  Widget _gridChild(BuildContext context, track, ColorScheme scheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, c) => Stack(
-              fit: StackFit.expand,
-              children: [
-                TrackArtwork(
-                    trackId: track.id,
-                    size: c.maxWidth,
-                    borderRadius: 0),
-                Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(track.durationLabel,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(track.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(track.artist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: scheme.onSurfaceVariant)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _listChild(BuildContext context, track, ColorScheme scheme) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: Row(
+      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
+      body: Stack(
         children: [
-          TrackArtwork(trackId: track.id, size: 56, borderRadius: 12),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(track.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                Text('${track.artist} · ${track.album}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant)),
-              ],
+          // Carousel (or a status message).
+          Positioned.fill(
+            child: library.status == LibraryStatus.ready &&
+                    library.tracks.isNotEmpty
+                ? SongCarousel(
+                    tracks: library.tracks,
+                    topBound: appBarBottom,
+                    bottomBound: miniTop,
+                    onSelect: _onSelect,
+                  )
+                : _Status(library: library, searching: _searching),
+          ),
+
+          // White fades at the top and bottom (Figma Gradient1/Gradient2).
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: pad.top + f(481 - MuslicAppBar.statusShift),
+            child: const IgnorePointer(child: _Fade(fromTop: true)),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: pad.bottom + f(481),
+            child: const IgnorePointer(child: _Fade(fromTop: false)),
+          ),
+
+          // Player: mini bar, expanding into the full card.
+          if (hasPlayer)
+            Positioned.fill(child: PlayerShell(expansion: _expansion)),
+
+          // App bar on top of everything. Its icons fade while the player
+          // is open; the logo stays.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: AnimatedBuilder(
+              animation: _expansion,
+              builder: (context, _) {
+                final iconOpacity =
+                    (1 - _expansion.value * 2).clamp(0.0, 1.0);
+                return IgnorePointer(
+                  ignoring: _expansion.value > 0.5,
+                  child: MuslicAppBar(
+                    leading: Opacity(
+                      opacity: iconOpacity,
+                      child: AppBarIcon(
+                        asset: UiAssets.settings,
+                        tooltip: 'Settings',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const SettingsScreen()),
+                        ),
+                      ),
+                    ),
+                    trailing: Opacity(
+                      opacity: iconOpacity,
+                      child: _searching
+                          ? AppBarGlyph(
+                              icon: Icons.close_rounded,
+                              tooltip: 'Close search',
+                              onTap: _toggleSearch,
+                            )
+                          : AppBarIcon(
+                              asset: UiAssets.search,
+                              tooltip: 'Search',
+                              onTap: _toggleSearch,
+                            ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          const SizedBox(width: 8),
-          Text(track.durationLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant)),
+
+          // Search field, just under the app bar.
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            left: f(60),
+            right: f(60),
+            top: _searching ? appBarBottom + f(10) : appBarBottom - f(40),
+            child: IgnorePointer(
+              ignoring: !_searching,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _searching ? 1 : 0,
+                child: _SearchField(
+                  controller: _searchCtrl,
+                  focusNode: _searchFocus,
+                  onChanged: library.setSearch,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Fade extends StatelessWidget {
+  const _Fade({required this.fromTop});
+  final bool fromTop;
+
+  @override
+  Widget build(BuildContext context) {
+    // Figma: transparent to white, reaching solid white at 63.5%.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: fromTop ? Alignment.bottomCenter : Alignment.topCenter,
+          end: fromTop ? Alignment.topCenter : Alignment.bottomCenter,
+          colors: const [Color(0x00FFFFFF), Colors.white],
+          stops: const [0.0, 0.635],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fg.of(context);
+    return Material(
+      color: Colors.white,
+      elevation: 6,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(f(60)),
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: Txt.inter(f(36), FontWeight.w400, color: Palette.ink),
+        cursorColor: Palette.ink,
+        decoration: InputDecoration(
+          hintText: 'Search title, artist or album',
+          hintStyle:
+              Txt.inter(f(36), FontWeight.w400, color: Palette.muted),
+          border: InputBorder.none,
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: f(48), vertical: f(30)),
+        ),
+      ),
+    );
+  }
+}
+
+class _Status extends StatelessWidget {
+  const _Status({required this.library, required this.searching});
+  final LibraryController library;
+  final bool searching;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fg.of(context);
+    void openSettings() => Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+
+    final (IconData? icon, String title, String body, String? action,
+        VoidCallback? onAction) = switch (library.status) {
+      LibraryStatus.idle || LibraryStatus.scanning => (null, '', '', null, null),
+      LibraryStatus.noPermission => (
+          Icons.lock_outline_rounded,
+          'müslic needs access to your audio files',
+          'Allow audio access to see your library. Nothing leaves your phone.',
+          'Allow access',
+          library.scan,
+        ),
+      LibraryStatus.empty => (
+          Icons.library_music_outlined,
+          'No songs found',
+          'Add music to your phone, or loosen the folder and length rules in Settings.',
+          'Scan again',
+          library.scan,
+        ),
+      LibraryStatus.error => (
+          Icons.error_outline_rounded,
+          'Scan failed',
+          library.errorMessage ?? 'The media library could not be read.',
+          'Try again',
+          library.scan,
+        ),
+      LibraryStatus.ready => searching
+          ? (
+              Icons.search_off_rounded,
+              'No matches',
+              'No title, artist or album matches your search.',
+              null,
+              null,
+            )
+          : (
+              Icons.filter_alt_off_rounded,
+              'Every song is filtered out',
+              'Your folder or length rules hide all songs. Change them in Settings.',
+              'Open settings',
+              openSettings,
+            ),
+    };
+
+    if (icon == null) {
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child:
+              CircularProgressIndicator(strokeWidth: 2.5, color: Palette.ink),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: f(120)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: f(150), color: Palette.ink),
+          SizedBox(height: f(40)),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: Txt.inter(f(52), FontWeight.w700, color: Palette.ink)),
+          SizedBox(height: f(20)),
+          Text(body,
+              textAlign: TextAlign.center,
+              style: Txt.inter(f(36), FontWeight.w400, color: Palette.muted)),
+          if (action != null) ...[
+            SizedBox(height: f(60)),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Palette.ink,
+                padding: EdgeInsets.symmetric(
+                    horizontal: f(60), vertical: f(30)),
+              ),
+              onPressed: onAction,
+              child: Text(action, style: Txt.inter(f(36), FontWeight.w600)),
+            ),
+          ],
         ],
       ),
     );

@@ -64,6 +64,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log || true
           flutter build apk --release 2>&1 | tee build.log
 
       # Publish the build log to the ci-logs branch so it can be read
@@ -72,7 +73,10 @@ jobs:
         if: always()
         shell: bash
         run: |
-          mkdir -p /tmp/logs && cp build.log /tmp/logs/ 2>/dev/null || echo "no build log" > /tmp/logs/build.log
+          mkdir -p /tmp/logs
+          cp build.log /tmp/logs/ 2>/dev/null || echo "no build log" > /tmp/logs/build.log
+          cp analyze.log /tmp/logs/ 2>/dev/null || true
+          cp -r screenshots /tmp/logs/ 2>/dev/null || true
           cd /tmp/logs
           git init -q && git checkout -q -b ci-logs
           git config user.name "müslic CI" && git config user.email "ci@users.noreply.github.com"
