@@ -165,6 +165,7 @@ void main() {
   });
 
   Future<void> pumpApp(WidgetTester tester, Widget home) async {
+    debugDisableShadows = false; // reset in shot()
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3.0;
     tester.view.padding = const FakeViewPadding(top: 72, bottom: 48);
@@ -214,10 +215,6 @@ void main() {
   // flutter_test draws shadows unblurred by default; turn real shadows on
   // just for the capture (the framework expects the flag reset afterwards).
   Future<void> shot(WidgetTester tester, String name) async {
-    debugDisableShadows = false;
-    // Repaint everything so shadows are drawn with the new setting.
-    await tester.runAsync(() => tester.binding.reassembleApplication());
-    await tester.pump();
     try {
       await expectLater(
           find.byType(LibraryScreen), matchesGoldenFile('screenshots/$name.png'));
