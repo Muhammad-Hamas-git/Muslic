@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
@@ -27,9 +26,11 @@ import '../models/track.dart';
 class ArtworkCache {
   ArtworkCache._(this._root);
 
-  static Future<ArtworkCache> open() async {
-    final base = await getApplicationSupportDirectory();
-    final cache = ArtworkCache._(Directory('${base.path}/artwork'));
+  /// [root] is only for tests; the app uses its private support folder.
+  static Future<ArtworkCache> open({Directory? root}) async {
+    final dir =
+        root ?? Directory('${(await getApplicationSupportDirectory()).path}/artwork');
+    final cache = ArtworkCache._(dir);
     await cache._init();
     return cache;
   }

@@ -37,20 +37,18 @@ class SettingsScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall),
           ),
           _SectionHeader('Library order'),
-          RadioListTile<LibrarySort>(
-            title: const Text('Sort by name'),
-            value: LibrarySort.name,
-            groupValue: settings.sort,
-            onChanged: (v) =>
-                settings.setSort(v!, ascending: v == LibrarySort.name),
-          ),
-          RadioListTile<LibrarySort>(
-            title: const Text('Sort by date updated'),
-            value: LibrarySort.dateModified,
-            groupValue: settings.sort,
-            onChanged: (v) =>
-                settings.setSort(v!, ascending: v == LibrarySort.name),
-          ),
+          for (final (sort, label) in [
+            (LibrarySort.name, 'Sort by name'),
+            (LibrarySort.dateModified, 'Sort by date updated'),
+          ])
+            ListTile(
+              title: Text(label),
+              trailing: settings.sort == sort
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () =>
+                  settings.setSort(sort, ascending: sort == LibrarySort.name),
+            ),
           SwitchListTile(
             title: const Text('Reverse order'),
             subtitle: Text(settings.sort == LibrarySort.name

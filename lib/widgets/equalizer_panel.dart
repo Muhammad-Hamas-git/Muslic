@@ -166,40 +166,34 @@ class _Bands extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        for (var i = 0; i < player.eqBands.length; i++)
+        for (var i = 0; i < player.eqFrequencies.length; i++)
           Expanded(
-            child: StreamBuilder<double>(
-              stream: player.eqBands[i].gainStream,
-              initialData: player.eqBands[i].gain,
-              builder: (context, snap) {
-                final g = snap.data ?? 0;
-                return Column(
-                  children: [
-                    Text('${g >= 0 ? '+' : ''}${g.toStringAsFixed(0)}',
-                        style: label),
-                    SizedBox(height: f(8)),
-                    Expanded(
-                      child: Opacity(
-                        opacity: dim,
-                        child: GlassSlider(
-                          axis: Axis.vertical,
-                          value: g,
-                          min: player.eqMinDb,
-                          max: player.eqMaxDb,
-                          origin: 0,
-                          thickness: f(5),
-                          knobRadius: f(13),
-                          onChanged: (v) => player.setBandGain(i, v),
-                          onDoubleTap: () => player.setBandGain(i, 0),
-                        ),
-                      ),
+            child: Column(
+              children: [
+                Text(
+                    '${player.eqGains[i] >= 0 ? '+' : ''}'
+                    '${player.eqGains[i].toStringAsFixed(0)}',
+                    style: label),
+                SizedBox(height: f(8)),
+                Expanded(
+                  child: Opacity(
+                    opacity: dim,
+                    child: GlassSlider(
+                      axis: Axis.vertical,
+                      value: player.eqGains[i],
+                      min: player.eqMinDb,
+                      max: player.eqMaxDb,
+                      origin: 0,
+                      thickness: f(5),
+                      knobRadius: f(13),
+                      onChanged: (v) => player.setBandGain(i, v),
+                      onDoubleTap: () => player.setBandGain(i, 0),
                     ),
-                    SizedBox(height: f(8)),
-                    Text(_freq(player.eqBands[i].centerFrequency),
-                        style: label),
-                  ],
-                );
-              },
+                  ),
+                ),
+                SizedBox(height: f(8)),
+                Text(_freq(player.eqFrequencies[i]), style: label),
+              ],
             ),
           ),
       ],

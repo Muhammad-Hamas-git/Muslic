@@ -61,10 +61,12 @@ class PlayerController extends ChangeNotifier {
 
   // Equalizer state. Bands are only known once audio has been loaded.
   bool eqEnabled = true;
-  List<AndroidEqualizerBand> eqBands = const [];
+  List<AndroidEqualizerBand> _eqBands = const [];
+  List<double> eqFrequencies = const []; // Hz, one per band
+  List<double> eqGains = const []; // dB, one per band
   double eqMinDb = -15;
   double eqMaxDb = 15;
-  bool get eqReady => eqBands.isNotEmpty;
+  bool get eqReady => eqFrequencies.isNotEmpty;
 
   AudioPlayer get player => _player;
   bool get playing => _player.playing;
@@ -132,11 +134,13 @@ class PlayerController extends ChangeNotifier {
       final params = await _eq.parameters;
       eqMinDb = params.minDecibels;
       eqMaxDb = params.maxDecibels;
-      eqBands = params.bands;
+      _eqBands = params.bands;
       final saved = _settings.eqGains;
-      for (var i = 0; i < eqBands.length && i < saved.length; i++) {
-        await eqBands[i].setGain(saved[i].clamp(eqMinDb, eqMaxDb));
+      for (var i = 0; i < _eqBands.length && i < saved.length; i++) {
+        await _eqBands[i].setGain(saved[i].clamp(eqMinDb, eqMaxDb));
       }
+      eqFrequencies = [for (final b in _eqBands) b.centerFrequency];
+      eqGains = [for (final b in _eqBands) b.gain];
       notifyListeners();
     } catch (e) {
       debugPrint('müslic: equalizer unavailable: $e');
@@ -144,10 +148,12 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> setBandGain(int band, double db) async {
-    if (band < 0 || band >= eqBands.length) return;
-    await eqBands[band].setGain(db.clamp(eqMinDb, eqMaxDb));
-    _persistEq();
+    if (band < 0 || band >= _eqBands.length) return;
+    final v = db.clamp(eqMinDb, eqMaxDb).toDouble();
+    eqGains = List.of(eqGains)..[band] = v;
     notifyListeners();
+    await _eqBands[band].setGain(v);
+    _persistEq();
   }
 
   Future<void> setEqEnabled(bool v) async {
@@ -158,15 +164,16 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> resetEqualizer() async {
-    for (final b in eqBands) {
+    eqGains = [for (final _ in _eqBands) 0.0];
+    notifyListeners();
+    for (final b in _eqBands) {
       await b.setGain(0);
     }
     _persistEq();
-    notifyListeners();
   }
 
-  void _persistEq() => _settings.saveEqualizer(
-      enabled: eqEnabled, gains: [for (final b in eqBands) b.gain]);
+  void _persistEq() =>
+      _settings.saveEqualizer(enabled: eqEnabled, gains: eqGains);
 
   Future<void> togglePlay() async {
     playing ? await _player.pause() : _player.play();

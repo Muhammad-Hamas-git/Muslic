@@ -51,7 +51,7 @@ class Txt {
         fontFamily: 'Inter',
         fontSize: size,
         fontWeight: weight,
-        fontVariations: [FontVariation('wght', (weight.index + 1) * 100.0)],
+        fontVariations: [FontVariation('wght', weight.value.toDouble())],
         color: color,
         height: height,
       );
