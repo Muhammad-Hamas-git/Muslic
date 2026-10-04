@@ -211,18 +211,31 @@ void main() {
     }
   }
 
+  // flutter_test draws shadows unblurred by default; turn real shadows on
+  // just for the capture (the framework expects the flag reset afterwards).
+  Future<void> shot(WidgetTester tester, String name) async {
+    debugDisableShadows = false;
+    // Repaint everything so shadows are drawn with the new setting.
+    await tester.runAsync(() => tester.binding.reassembleApplication());
+    await tester.pump();
+    try {
+      await expectLater(
+          find.byType(LibraryScreen), matchesGoldenFile('screenshots/$name.png'));
+    } finally {
+      debugDisableShadows = true;
+    }
+  }
+
   testWidgets('library with mini player', (tester) async {
     await pumpApp(tester, const LibraryScreen());
-    await expectLater(
-        find.byType(LibraryScreen), matchesGoldenFile('screenshots/1_library.png'));
+    await shot(tester, '1_library');
   });
 
   testWidgets('expanded player', (tester) async {
     await pumpApp(tester, const LibraryScreen());
     await tester.tapAt(const Offset(110, 700)); // mini player title area
     await settle(tester);
-    await expectLater(
-        find.byType(LibraryScreen), matchesGoldenFile('screenshots/2_player.png'));
+    await shot(tester, '2_player');
   });
 
   testWidgets('equalizer open', (tester) async {
@@ -232,15 +245,13 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Equalizer'));
     await settle(tester);
     expect(find.byType(EqualizerPanel), findsOneWidget);
-    await expectLater(find.byType(LibraryScreen),
-        matchesGoldenFile('screenshots/3_equalizer.png'));
+    await shot(tester, '3_equalizer');
   });
 
   testWidgets('carousel scrolled by one song', (tester) async {
     await pumpApp(tester, const LibraryScreen());
     await tester.dragFrom(const Offset(250, 450), const Offset(0, -150));
     await settle(tester);
-    await expectLater(find.byType(LibraryScreen),
-        matchesGoldenFile('screenshots/4_library_scrolled.png'));
+    await shot(tester, '4_library_scrolled');
   });
 }

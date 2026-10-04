@@ -143,6 +143,11 @@ class _Bands extends StatelessWidget {
   const _Bands({required this.player});
   final PlayerController player;
 
+  String _db(double g) {
+    final r = g.round();
+    return r > 0 ? '+$r' : '$r';
+  }
+
   String _freq(double hz) =>
       hz >= 1000 ? '${(hz / 1000).toStringAsFixed(hz >= 10000 ? 0 : 1)}k' : '${hz.round()}';
 
@@ -170,10 +175,7 @@ class _Bands extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text(
-                    '${player.eqGains[i] >= 0 ? '+' : ''}'
-                    '${player.eqGains[i].toStringAsFixed(0)}',
-                    style: label),
+                Text(_db(player.eqGains[i]), style: label),
                 SizedBox(height: f(8)),
                 Expanded(
                   child: Opacity(

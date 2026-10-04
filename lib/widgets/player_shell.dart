@@ -216,9 +216,13 @@ class _ExpandedLayout {
             f(120), card.height - f(224 + 458), f(787), f(458)),
         art = Rect.zero,
         eqPanel = Rect.zero {
-    final artTop = f(274);
-    final room = panel.top - f(118) - artTop;
-    final side = room.clamp(f(300), f(773)).toDouble();
+    // Figma: art 773 px, 118 px above the panel, top at 274. On shorter
+    // phones the space above the art shrinks first (down to just below the
+    // top buttons), then the gap to the panel, and only then the art.
+    const minTop = 190.0, minGap = 60.0;
+    final side = (panel.top - f(minTop + minGap)).clamp(f(300), f(773)).toDouble();
+    final gap = (panel.top - f(minTop) - side).clamp(f(minGap), f(118)).toDouble();
+    final artTop = panel.top - gap - side;
     art = Rect.fromLTWH((card.width - side) / 2, artTop, side, side);
     eqPanel = Rect.fromLTRB(
         panel.left, f(193), panel.right, panel.top - f(30));
