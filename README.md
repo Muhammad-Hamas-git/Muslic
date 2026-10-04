@@ -11,6 +11,36 @@ A warm, fast, local-only Android music player built with Flutter. Plays MP3, M4A
 - **Background play** with a media-style notification in the shade and on the lock screen (art, title, transport controls), headset button support, and audio-focus handling (ducks/pauses for calls and other apps).
 - **Robustness**: unreadable or corrupt files are skipped automatically instead of killing the queue; permission denial, empty library, and over-filtered library each get a clear recovery screen.
 
+## UI assets and tuning
+
+The UI images come from the Figma file and live in `assets/ui/` (resized
+for the app) with originals in `assets/ui_source/`. To swap one, drop a PNG
+with the same name into `assets/ui/`; any resolution works.
+
+| File | Used for | Blend |
+|---|---|---|
+| `play.png`, `pause.png` | Play/pause, mini and full player | screen |
+| `prev.png`, `next.png` | Previous/next, mini and full player | screen |
+| `minimize.png` | Collapse the full player | screen |
+| `equalizer.png` | Open the equalizer panel | screen |
+| `panel_bg.png` | Glass control panel and equalizer panel (nine-sliced) | screen |
+| `loop.png`, `shuffle.png` | Repeat and shuffle | normal |
+| `settings.png`, `search.png` | App bar icons (75% opacity) | normal |
+| `logo.png` | App bar logo | normal |
+
+`assets/figma-assets.txt` lists the Figma export URLs; editing it re-runs the
+"Fetch Figma assets" workflow, which downloads them into `assets/ui_source/`.
+
+Values you can tune by hand:
+- `lib/debug/blur_tuning.dart`: album-art blur strength, size, saturation,
+  zoom, darkening, fallback colours. Baked values regenerate the cache
+  automatically on next launch.
+- `lib/debug/ui_tuning.dart`: carousel sizes, spacing and white wash by
+  distance from centre, scroll step, player open/close timing.
+
+`test/screenshot_test.dart` renders the main screens with made-up songs; CI
+publishes the images to the `ci-logs` branch under `screenshots/`.
+
 ## Project layout
 
 ```
