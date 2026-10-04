@@ -1,0 +1,35 @@
+name: Fetch Figma assets
+
+# Downloads the UI images listed in assets/figma-assets.txt into
+# assets/ui/ and commits them. Runs when that list changes.
+on:
+  push:
+    branches: [main]
+    paths: [assets/figma-assets.txt]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download assets
+        shell: bash
+        run: |
+          mkdir -p assets/ui
+          grep -v '^#' assets/figma-assets.txt | while read -r name url; do
+            [ -z "$name" ] && continue
+            curl -sSfL -o "assets/ui/$name" "$url" && echo "ok $name" || echo "FAILED $name"
+          done
+          ls -la assets/ui
+      - name: Commit assets
+        shell: bash
+        run: |
+          git config user.name "müslic CI"
+          git config user.email "ci@users.noreply.github.com"
+          git add assets/ui
+          git diff --cached --quiet || git commit -m "Add UI assets from Figma"
+          git push

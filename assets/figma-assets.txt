@@ -1,0 +1,18 @@
+# file name in assets/ui/        Figma asset URL (valid 7 days from 2026-10-04)
+play.png        https://www.figma.com/api/mcp/asset/9375e346-0d07-45da-9b6f-f447486c11da.png
+mini_next.png   https://www.figma.com/api/mcp/asset/4c33a68b-ea02-467d-8e2d-c392d493eb33.png
+mini_prev.png   https://www.figma.com/api/mcp/asset/7a9992c8-b066-472f-8b0f-e95de78395fe.png
+settings.png    https://www.figma.com/api/mcp/asset/b0294587-fb59-4c3a-a4d1-86ed3be5b740.png
+logo.png        https://www.figma.com/api/mcp/asset/28dd0c7e-0de2-43a1-8942-fff97c518373.png
+search.png      https://www.figma.com/api/mcp/asset/d8af05ec-0e8e-46c3-8257-d670bd7154dc.png
+mini_mask.svg   https://www.figma.com/api/mcp/asset/42b52ba2-2665-42e0-a773-397caf142fb9.svg
+panel_bg.png    https://www.figma.com/api/mcp/asset/a3a5911d-0f33-4106-9606-e791143b643c.png
+pause.png       https://www.figma.com/api/mcp/asset/bff449da-ded2-4e89-a2e7-4074692143e7.png
+prev.png        https://www.figma.com/api/mcp/asset/7cc688dc-62f0-491a-931a-36b6b071429f.png
+next.png        https://www.figma.com/api/mcp/asset/cbdca647-9085-4fab-a16d-70b35cd64a66.png
+loop.png        https://www.figma.com/api/mcp/asset/393bc46f-e56e-4332-9847-6a23c042fcdc.png
+shuffle.png     https://www.figma.com/api/mcp/asset/136d2fed-8126-4a08-8b86-6bcd3954010f.png
+equalizer.png   https://www.figma.com/api/mcp/asset/1c916ebe-5e45-47ee-80d9-ec3ebd15116b.png
+minimize.png    https://www.figma.com/api/mcp/asset/812c9572-ca87-4055-865a-094236935468.png
+player_mask.svg https://www.figma.com/api/mcp/asset/29000d83-f85c-49ca-bd9e-cac6579c7a52.svg
+playbar.svg     https://www.figma.com/api/mcp/asset/dfe27733-5626-4c80-a84d-f93a038c9af6.svg
