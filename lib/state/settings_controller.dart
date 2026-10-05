@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum LibrarySort { name, dateModified }
+enum LibrarySort { artist, name, dateModified }
 
 /// All user-tunable settings, persisted to SharedPreferences.
 ///
@@ -26,8 +26,9 @@ class SettingsController extends ChangeNotifier {
   bool hideWhatsAppAudio = true; // common noise source, on by default
 
   // ---- Library view ----
-  LibrarySort sort = LibrarySort.name;
+  LibrarySort sort = LibrarySort.artist;
   bool sortAscending = true;
+  bool tidyTitles = true; // shorten "Artist - Song (Official Video)" style names
 
   // ---- Playback ----
   bool resumeOnHeadphones = false;
@@ -47,8 +48,12 @@ class SettingsController extends ChangeNotifier {
     maxDurationSeconds = _prefs.getInt('maxDurationSeconds') ?? 0;
     includeSubfolders = _prefs.getBool('includeSubfolders') ?? true;
     hideWhatsAppAudio = _prefs.getBool('hideWhatsAppAudio') ?? true;
-    sort = LibrarySort.values[_prefs.getInt('sort') ?? 0];
-    sortAscending = _prefs.getBool('sortAscending') ?? true;
+    // Stored by name under a new key, so the new artist default applies
+    // to everyone once; older saved sorts are ignored.
+    sort = LibrarySort.values.asNameMap()[_prefs.getString('sortBy')] ??
+        LibrarySort.artist;
+    sortAscending = _prefs.getBool('sortAscendingV2') ?? true;
+    tidyTitles = _prefs.getBool('tidyTitles') ?? true;
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
@@ -68,8 +73,9 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setInt('maxDurationSeconds', maxDurationSeconds);
     await _prefs.setBool('includeSubfolders', includeSubfolders);
     await _prefs.setBool('hideWhatsAppAudio', hideWhatsAppAudio);
-    await _prefs.setInt('sort', sort.index);
-    await _prefs.setBool('sortAscending', sortAscending);
+    await _prefs.setString('sortBy', sort.name);
+    await _prefs.setBool('sortAscendingV2', sortAscending);
+    await _prefs.setBool('tidyTitles', tidyTitles);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
@@ -128,6 +134,11 @@ class SettingsController extends ChangeNotifier {
   void setSort(LibrarySort s, {bool? ascending}) {
     sort = s;
     if (ascending != null) sortAscending = ascending;
+    _commit();
+  }
+
+  void setTidyTitles(bool v) {
+    tidyTitles = v;
     _commit();
   }
 

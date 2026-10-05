@@ -21,6 +21,8 @@ class LibraryController extends ChangeNotifier {
   LibraryStatus status = LibraryStatus.idle;
   String? errorMessage;
 
+  List<SongModel> _songs = [];
+  bool? _tidyApplied;
   List<Track> _all = [];
   List<Track> tracks = [];
   String searchTerm = '';
@@ -39,7 +41,17 @@ class LibraryController extends ChangeNotifier {
   }
 
   void _onSettingsChanged() {
+    if (_tidyApplied != null && _tidyApplied != _settings.tidyTitles) {
+      _buildTracks();
+    }
     _applyFilters();
+  }
+
+  void _buildTracks() {
+    _tidyApplied = _settings.tidyTitles;
+    _all = [
+      for (final s in _songs) Track.fromSong(s, tidy: _settings.tidyTitles)
+    ];
   }
 
   Future<bool> _ensurePermission() async {
@@ -68,10 +80,10 @@ class LibraryController extends ChangeNotifier {
         uriType: UriType.EXTERNAL,
       );
 
-      _all = songs
+      _songs = songs
           .where((s) => (s.isMusic ?? true) || (s.isAudioBook ?? false))
-          .map(Track.fromSong)
           .toList();
+      _buildTracks();
 
       _applyFilters();
       // Pre-blur backgrounds for what is visible first, then the rest.
@@ -119,20 +131,30 @@ class LibraryController extends ChangeNotifier {
       if (q.isNotEmpty &&
           !t.title.toLowerCase().contains(q) &&
           !t.artist.toLowerCase().contains(q) &&
-          !t.album.toLowerCase().contains(q)) {
+          !t.album.toLowerCase().contains(q) &&
+          !t.rawTitle.toLowerCase().contains(q)) {
         return false;
       }
       return true;
     }).toList();
 
+    int byText(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
+    int byArtist(Track a, Track b) {
+      // "Unknown artist" goes after everything else.
+      final ua = a.artist == Track.unknownArtist, ub = b.artist == Track.unknownArtist;
+      if (ua != ub) return ua ? 1 : -1;
+      final c = byText(a.artist, b.artist);
+      return c != 0 ? c : byText(a.title, b.title);
+    }
+
     switch (_settings.sort) {
+      case LibrarySort.artist:
+        list.sort(byArtist);
       case LibrarySort.name:
-        list.sort((a, b) =>
-            a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-        break;
+        list.sort((a, b) => byText(a.title, b.title));
       case LibrarySort.dateModified:
-        list.sort((a, b) => a.dateModified.compareTo(b.dateModified));
-        break;
+        // Newest first when "ascending" (the default direction).
+        list.sort((a, b) => b.dateModified.compareTo(a.dateModified));
     }
     if (!_settings.sortAscending) {
       list = list.reversed.toList();

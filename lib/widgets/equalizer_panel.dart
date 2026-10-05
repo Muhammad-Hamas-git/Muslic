@@ -1,21 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/ui_tuning.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
 import 'blend_image.dart';
 import 'glass_slider.dart';
 
-/// Equalizer, speed and pitch, shown inside the player card in place of
-/// the album art. Uses the same glass panel image as the control panel.
+/// Equalizer, speed, pitch and boost, shown inside the player card in
+/// place of the album art. Uses the same glass panel image as the control
+/// panel.
+///
+/// [fade] is applied as paint alpha to the glass background (so its screen
+/// blend keeps working while it animates) and as a normal Opacity to the
+/// controls on top, which are plain white drawings.
 class EqualizerPanel extends StatelessWidget {
-  const EqualizerPanel({super.key});
+  const EqualizerPanel({super.key, this.fade = 1.0});
+
+  final double fade;
 
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
     final player = context.watch<PlayerController>();
     final pad = f(56);
+
+    final controls = Padding(
+      padding: EdgeInsets.fromLTRB(pad, f(40), pad, f(36)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child:
+                    Text('Equalizer', style: Txt.inter(f(40), FontWeight.w700)),
+              ),
+              _Pill(
+                label: player.eqEnabled ? 'On' : 'Off',
+                active: player.eqEnabled,
+                onTap: player.eqReady
+                    ? () => player.setEqEnabled(!player.eqEnabled)
+                    : null,
+              ),
+              SizedBox(width: f(20)),
+              _Pill(
+                label: 'Reset',
+                onTap: () {
+                  player.resetEqualizer();
+                  player.resetRates();
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: f(20)),
+          Expanded(child: _Bands(player: player)),
+          SizedBox(height: f(24)),
+          _RateRow(
+            label: 'Speed',
+            display: '${_rate(player.speed)}x',
+            slider: SnapSlider(
+              stops: EqTuning.rateStops,
+              value: player.speed,
+              origin: 1.0,
+              thickness: f(EqTuning.rateLine),
+              knobRadius: f(EqTuning.rateKnob),
+              onChanged: player.setSpeed,
+            ),
+          ),
+          _RateRow(
+            label: 'Pitch',
+            display: '${_rate(player.pitch)}x',
+            slider: SnapSlider(
+              stops: EqTuning.rateStops,
+              value: player.pitch,
+              origin: 1.0,
+              thickness: f(EqTuning.rateLine),
+              knobRadius: f(EqTuning.rateKnob),
+              onChanged: player.setPitch,
+            ),
+          ),
+          _RateRow(
+            label: 'Boost',
+            display: player.gainDb == 0
+                ? '0 dB'
+                : '+${player.gainDb.toStringAsFixed(0)} dB',
+            slider: SnapSlider(
+              stops: EqTuning.boostStops,
+              value: player.gainDb,
+              origin: 0,
+              thickness: f(EqTuning.rateLine),
+              knobRadius: f(EqTuning.rateKnob),
+              onChanged: player.setGainDb,
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Stack(
       fit: StackFit.expand,
@@ -24,91 +105,18 @@ class EqualizerPanel extends StatelessWidget {
         // corners are drawn at 787/1180 of source size, scaled to screen.
         BlendImage(
           UiAssets.panel,
+          opacity: fade,
           sliceInsets: const EdgeInsets.all(110),
           sliceScale: f(787) / 1180,
         ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(pad, f(40), pad, f(44)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(
-                title: 'Equalizer',
-                trailing: [
-                  _Pill(
-                    label: player.eqEnabled ? 'On' : 'Off',
-                    active: player.eqEnabled,
-                    onTap: player.eqReady
-                        ? () => player.setEqEnabled(!player.eqEnabled)
-                        : null,
-                  ),
-                  SizedBox(width: f(20)),
-                  _Pill(
-                    label: 'Reset',
-                    onTap: () {
-                      player.resetEqualizer();
-                      player.resetRates();
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: f(24)),
-              Expanded(child: _Bands(player: player)),
-              SizedBox(height: f(28)),
-              _RateRow(
-                label: 'Speed',
-                value: player.speed,
-                display: '${player.speed.toStringAsFixed(2)}x',
-                min: PlayerController.minRate,
-                max: PlayerController.maxRate,
-                origin: 1.0,
-                onChanged: player.setSpeed,
-                onReset: () => player.setSpeed(1.0),
-              ),
-              _RateRow(
-                label: 'Pitch',
-                value: player.pitch,
-                display: '${player.pitch.toStringAsFixed(2)}x',
-                min: PlayerController.minRate,
-                max: PlayerController.maxRate,
-                origin: 1.0,
-                onChanged: player.setPitch,
-                onReset: () => player.setPitch(1.0),
-              ),
-              _RateRow(
-                label: 'Boost',
-                value: player.gainDb,
-                display: '+${player.gainDb.toStringAsFixed(1)} dB',
-                min: 0,
-                max: 12,
-                onChanged: player.setGainDb,
-                onReset: () => player.setGainDb(0),
-              ),
-            ],
-          ),
-        ),
+        if (fade > 0)
+          fade >= 1 ? controls : Opacity(opacity: fade, child: controls),
       ],
     );
   }
-}
 
-class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.trailing});
-  final String title;
-  final List<Widget> trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final f = Fg.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title, style: Txt.inter(f(40), FontWeight.w700)),
-        ),
-        ...trailing,
-      ],
-    );
-  }
+  static String _rate(double v) =>
+      v.toStringAsFixed(v * 10 == (v * 10).roundToDouble() ? 1 : 2);
 }
 
 class _Pill extends StatelessWidget {
@@ -143,13 +151,14 @@ class _Bands extends StatelessWidget {
   const _Bands({required this.player});
   final PlayerController player;
 
-  String _db(double g) {
+  static String _db(double g) {
     final r = g.round();
     return r > 0 ? '+$r' : '$r';
   }
 
-  String _freq(double hz) =>
-      hz >= 1000 ? '${(hz / 1000).toStringAsFixed(hz >= 10000 ? 0 : 1)}k' : '${hz.round()}';
+  static String _freq(double hz) => hz >= 1000
+      ? '${(hz / 1000).toStringAsFixed(hz >= 10000 ? 0 : 1)}k'
+      : '${hz.round()}';
 
   @override
   Widget build(BuildContext context) {
@@ -165,18 +174,17 @@ class _Bands extends StatelessWidget {
       );
     }
     final dim = player.eqEnabled ? 1.0 : 0.4;
-    final label = Txt.inter(f(22), FontWeight.w500,
-        color: Colors.white.withValues(alpha: 0.8 * dim));
+    final label = Txt.inter(f(24), FontWeight.w600,
+        color: Colors.white.withValues(alpha: 0.9 * dim));
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         for (var i = 0; i < player.eqFrequencies.length; i++)
           Expanded(
             child: Column(
               children: [
                 Text(_db(player.eqGains[i]), style: label),
-                SizedBox(height: f(8)),
+                SizedBox(height: f(6)),
                 Expanded(
                   child: Opacity(
                     opacity: dim,
@@ -186,14 +194,15 @@ class _Bands extends StatelessWidget {
                       min: player.eqMinDb,
                       max: player.eqMaxDb,
                       origin: 0,
-                      thickness: f(5),
-                      knobRadius: f(13),
+                      thickness: f(EqTuning.bandLine),
+                      knobRadius: f(EqTuning.bandKnob),
+                      knobColor: Colors.white,
                       onChanged: (v) => player.setBandGain(i, v),
                       onDoubleTap: () => player.setBandGain(i, 0),
                     ),
                   ),
                 ),
-                SizedBox(height: f(8)),
+                SizedBox(height: f(6)),
                 Text(_freq(player.eqFrequencies[i]), style: label),
               ],
             ),
@@ -204,49 +213,25 @@ class _Bands extends StatelessWidget {
 }
 
 class _RateRow extends StatelessWidget {
-  const _RateRow({
-    required this.label,
-    required this.value,
-    required this.display,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    required this.onReset,
-    this.origin,
-  });
+  const _RateRow(
+      {required this.label, required this.display, required this.slider});
 
   final String label;
-  final double value;
   final String display;
-  final double min;
-  final double max;
-  final double? origin;
-  final ValueChanged<double> onChanged;
-  final VoidCallback onReset;
+  final Widget slider;
 
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
     final text = Txt.inter(f(26), FontWeight.w500);
     return SizedBox(
-      height: f(64),
+      height: f(70),
       child: Row(
         children: [
-          SizedBox(width: f(110), child: Text(label, style: text)),
-          Expanded(
-            child: GlassSlider(
-              value: value,
-              min: min,
-              max: max,
-              origin: origin,
-              thickness: f(5),
-              knobRadius: f(13),
-              onChanged: onChanged,
-              onDoubleTap: onReset,
-            ),
-          ),
+          SizedBox(width: f(105), child: Text(label, style: text)),
+          Expanded(child: slider),
           SizedBox(
-            width: f(130),
+            width: f(105),
             child: Text(display, textAlign: TextAlign.right, style: text),
           ),
         ],

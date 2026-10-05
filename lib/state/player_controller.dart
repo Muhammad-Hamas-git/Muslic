@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
+import '../debug/ui_tuning.dart';
 import '../models/track.dart';
 import '../services/artwork_cache.dart';
 import 'settings_controller.dart';
@@ -25,9 +26,9 @@ class PlayerController extends ChangeNotifier {
     );
 
     if (_settings.rememberPlaybackSettings) {
-      speed = _settings.lastSpeed;
-      pitch = _settings.lastPitch;
-      gainDb = _settings.lastGainDb;
+      speed = snap(_settings.lastSpeed, EqTuning.rateStops);
+      pitch = snap(_settings.lastPitch, EqTuning.rateStops);
+      gainDb = snap(_settings.lastGainDb, EqTuning.boostStops);
     }
     eqEnabled = _settings.eqEnabled;
 
@@ -44,8 +45,12 @@ class PlayerController extends ChangeNotifier {
     }));
   }
 
-  static const double minRate = 0.5;
-  static const double maxRate = 2.0;
+  static double get minRate => EqTuning.rateStops.first;
+  static double get maxRate => EqTuning.rateStops.last;
+
+  /// Nearest allowed value in [stops].
+  static double snap(double v, List<double> stops) => stops.reduce(
+      (a, b) => (a - v).abs() <= (b - v).abs() ? a : b);
 
   final SettingsController _settings;
   final ArtworkCache _art;
@@ -57,7 +62,7 @@ class PlayerController extends ChangeNotifier {
   List<Track> queue = [];
   double speed = 1.0;
   double pitch = 1.0;
-  double gainDb = 0.0; // 0..+12 dB
+  double gainDb = 0.0; // dB, one of EqTuning.boostStops
 
   // Equalizer state. Bands are only known once audio has been loaded.
   bool eqEnabled = true;
@@ -206,21 +211,21 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> setSpeed(double v) async {
-    speed = v.clamp(minRate, maxRate);
+    speed = snap(v, EqTuning.rateStops);
     await _player.setSpeed(speed);
     _persist();
     notifyListeners();
   }
 
   Future<void> setPitch(double v) async {
-    pitch = v.clamp(minRate, maxRate);
+    pitch = snap(v, EqTuning.rateStops);
     await _player.setPitch(pitch);
     _persist();
     notifyListeners();
   }
 
   void setGainDb(double v) {
-    gainDb = v.clamp(0.0, 12.0);
+    gainDb = snap(v, EqTuning.boostStops);
     _loudness.setTargetGain(gainDb);
     _persist();
     notifyListeners();

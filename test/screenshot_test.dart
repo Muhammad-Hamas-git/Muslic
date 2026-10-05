@@ -110,11 +110,11 @@ class FakePlayer extends ChangeNotifier implements PlayerController {
   Stream<Duration> get positionStream =>
       Stream.value(const Duration(minutes: 2, seconds: 20));
   @override
-  double speed = 1.25;
+  double speed = 1.2;
   @override
   double pitch = 1.0;
   @override
-  double gainDb = 3.0;
+  double gainDb = 4.0;
   @override
   bool eqEnabled = true;
   @override
@@ -250,5 +250,21 @@ void main() {
     await tester.dragFrom(const Offset(250, 450), const Offset(0, -150));
     await settle(tester);
     await shot(tester, '4_library_scrolled');
+  });
+
+  testWidgets('player halfway through opening', (tester) async {
+    await pumpApp(tester, const LibraryScreen());
+    await tester.tapAt(const Offset(110, 700));
+    await tester.pump(const Duration(milliseconds: 180));
+    await shot(tester, '5_opening_halfway');
+  });
+
+  testWidgets('equalizer halfway through opening', (tester) async {
+    await pumpApp(tester, const LibraryScreen());
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await tester.pump(const Duration(milliseconds: 150));
+    await shot(tester, '6_equalizer_halfway');
   });
 }

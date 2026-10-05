@@ -37,29 +37,39 @@ class SettingsScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall),
           ),
           _SectionHeader('Library order'),
-          for (final (sort, label) in [
-            (LibrarySort.name, 'Sort by name'),
-            (LibrarySort.dateModified, 'Sort by date updated'),
+          for (final (sort, label, hint) in [
+            (LibrarySort.artist, 'Artist', 'A to Z by artist, then song'),
+            (LibrarySort.name, 'Song name', 'A to Z by song title'),
+            (LibrarySort.dateModified, 'Date modified', 'Newest files first'),
           ])
             ListTile(
               title: Text(label),
+              subtitle: Text(hint),
               trailing: settings.sort == sort
                   ? const Icon(Icons.check_rounded)
                   : null,
-              onTap: () =>
-                  settings.setSort(sort, ascending: sort == LibrarySort.name),
+              onTap: () => settings.setSort(sort, ascending: true),
             ),
           SwitchListTile(
             title: const Text('Reverse order'),
-            subtitle: Text(settings.sort == LibrarySort.name
-                ? 'Z to A instead of A to Z'
-                : 'Oldest first instead of newest first'),
-            // Date sort shows newest first by default, so "reversed" means
-            // ascending there.
-            value: settings.sort == LibrarySort.name
-                ? !settings.sortAscending
-                : settings.sortAscending,
+            subtitle: Text(switch (settings.sort) {
+              LibrarySort.artist => 'Artists Z to A',
+              LibrarySort.name => 'Songs Z to A',
+              LibrarySort.dateModified => 'Oldest files first',
+            }),
+            value: !settings.sortAscending,
             onChanged: (_) => settings.toggleSortDirection(),
+          ),
+          const Divider(height: 32),
+          _SectionHeader('Song names'),
+          SwitchListTile(
+            title: const Text('Tidy song names'),
+            subtitle: const Text(
+                'Hides bracketed extras like "(Official Video)" and splits '
+                '"Artist - Song" titles into artist and song. Your files are '
+                'not changed.'),
+            value: settings.tidyTitles,
+            onChanged: settings.setTidyTitles,
           ),
           const Divider(height: 32),
           _SectionHeader('Music sources'),

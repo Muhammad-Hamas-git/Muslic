@@ -40,3 +40,23 @@ class PlayerMotion {
   /// Equalizer panel open/close inside the player.
   static const Duration equalizer = Duration(milliseconds: 320);
 }
+
+/// Equalizer panel values.
+class EqTuning {
+  EqTuning._();
+
+  /// The values the speed and pitch sliders snap to (ascending, must
+  /// include 1.0). Add 2.0 here for a "double speed" stop.
+  static const List<double> rateStops = [0.5, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5];
+
+  /// The values (dB) the boost slider snaps to (ascending, must include 0).
+  static const List<double> boostStops = [0, 2, 4, 6, 8];
+
+  /// Equalizer band slider knob radius and line thickness, in Figma px.
+  static const double bandKnob = 26;
+  static const double bandLine = 7;
+
+  /// Speed/pitch/boost knob radius and line thickness, in Figma px.
+  static const double rateKnob = 20;
+  static const double rateLine = 6;
+}

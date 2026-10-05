@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 import '../ui/design.dart';
@@ -17,6 +18,7 @@ class GlassSlider extends StatefulWidget {
     this.origin,
     this.thickness,
     this.knobRadius,
+    this.knobColor = Palette.knob,
     this.onDoubleTap,
   });
 
@@ -35,6 +37,7 @@ class GlassSlider extends StatefulWidget {
   /// 15 Figma px.
   final double? thickness;
   final double? knobRadius;
+  final Color knobColor;
 
   /// Usually "reset to default".
   final VoidCallback? onDoubleTap;
@@ -102,6 +105,7 @@ class _GlassSliderState extends State<GlassSlider> {
             horizontal: horizontal,
             thickness: thick,
             knob: knob,
+            knobColor: widget.knobColor,
           ),
         ),
       );
@@ -118,9 +122,11 @@ class _SliderPainter extends CustomPainter {
     required this.horizontal,
     required this.thickness,
     required this.knob,
+    required this.knobColor,
   });
 
   final double value, min, max, origin, thickness, knob;
+  final Color knobColor;
   final bool horizontal;
 
   @override
@@ -143,7 +149,14 @@ class _SliderPainter extends CustomPainter {
 
     canvas.drawLine(at(0), at(1), rest);
     canvas.drawLine(at(frac(origin)), at(frac(value)), fill);
-    canvas.drawCircle(at(frac(value)), knob, Paint()..color = Palette.knob);
+    final c = at(frac(value));
+    canvas.drawCircle(
+        c.translate(0, knob * 0.12),
+        knob * 1.05,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.18)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, knob * 0.25));
+    canvas.drawCircle(c, knob, Paint()..color = knobColor);
   }
 
   @override
@@ -154,5 +167,139 @@ class _SliderPainter extends CustomPainter {
       o.origin != origin ||
       o.thickness != thickness ||
       o.knob != knob ||
+      o.knobColor != knobColor ||
       o.horizontal != horizontal;
+}
+
+/// A slider that only lands on fixed values ([stops]), spaced evenly along
+/// the track so each stop is equally easy to hit. Small dots mark the
+/// stops; the fill runs from [origin] (usually the neutral value) to the
+/// current stop. [onChanged] fires only when the stop changes.
+class SnapSlider extends StatefulWidget {
+  const SnapSlider({
+    super.key,
+    required this.stops,
+    required this.value,
+    required this.origin,
+    required this.onChanged,
+    this.thickness,
+    this.knobRadius,
+    this.knobColor = Colors.white,
+  });
+
+  final List<double> stops; // ascending
+  final double value;
+  final double origin;
+  final ValueChanged<double> onChanged;
+  final double? thickness;
+  final double? knobRadius;
+  final Color knobColor;
+
+  @override
+  State<SnapSlider> createState() => _SnapSliderState();
+}
+
+class _SnapSliderState extends State<SnapSlider> {
+  int _nearest(double v) {
+    var best = 0;
+    for (var i = 1; i < widget.stops.length; i++) {
+      if ((widget.stops[i] - v).abs() < (widget.stops[best] - v).abs()) {
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fg.of(context);
+    final thick = widget.thickness ?? f(6);
+    final knob = widget.knobRadius ?? f(15);
+    final n = widget.stops.length;
+
+    return LayoutBuilder(builder: (context, c) {
+      final size = c.biggest;
+      void pick(Offset p) {
+        final t = ((p.dx - knob) / (size.width - knob * 2)).clamp(0.0, 1.0);
+        final i = (t * (n - 1)).round();
+        final v = widget.stops[i];
+        if (v != widget.value) {
+          HapticFeedback.selectionClick();
+          widget.onChanged(v);
+        }
+      }
+
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (d) => pick(d.localPosition),
+        onHorizontalDragStart: (d) => pick(d.localPosition),
+        onHorizontalDragUpdate: (d) => pick(d.localPosition),
+        onDoubleTap: () => widget.onChanged(widget.origin),
+        child: CustomPaint(
+          size: size,
+          painter: _SnapPainter(
+            count: n,
+            index: _nearest(widget.value),
+            origin: _nearest(widget.origin),
+            thickness: thick,
+            knob: knob,
+            knobColor: widget.knobColor,
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _SnapPainter extends CustomPainter {
+  _SnapPainter({
+    required this.count,
+    required this.index,
+    required this.origin,
+    required this.thickness,
+    required this.knob,
+    required this.knobColor,
+  });
+
+  final int count, index, origin;
+  final double thickness, knob;
+  final Color knobColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Offset at(int i) => Offset(
+        knob + (size.width - knob * 2) * (count == 1 ? 0 : i / (count - 1)),
+        size.height / 2);
+    final rest = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4)
+      ..strokeWidth = thickness
+      ..strokeCap = StrokeCap.round;
+    final fill = Paint()
+      ..color = Colors.white
+      ..strokeWidth = thickness
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(at(0), at(count - 1), rest);
+    canvas.drawLine(at(origin), at(index), fill);
+    for (var i = 0; i < count; i++) {
+      canvas.drawCircle(at(i), thickness * 0.9,
+          Paint()..color = Colors.white.withValues(alpha: i == origin ? 1 : 0.8));
+    }
+    final c = at(index);
+    canvas.drawCircle(
+        c.translate(0, knob * 0.12),
+        knob * 1.05,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.18)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, knob * 0.25));
+    canvas.drawCircle(c, knob, Paint()..color = knobColor);
+  }
+
+  @override
+  bool shouldRepaint(_SnapPainter o) =>
+      o.count != count ||
+      o.index != index ||
+      o.origin != origin ||
+      o.thickness != thickness ||
+      o.knob != knob ||
+      o.knobColor != knobColor;
 }
