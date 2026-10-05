@@ -255,7 +255,8 @@ void main() {
   testWidgets('player halfway through opening', (tester) async {
     await pumpApp(tester, const LibraryScreen());
     await tester.tapAt(const Offset(110, 700));
-    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump(); // starts the animation clock
+    await tester.pump(const Duration(milliseconds: 200));
     await shot(tester, '5_opening_halfway');
   });
 
@@ -264,6 +265,7 @@ void main() {
     await tester.tapAt(const Offset(110, 700));
     await settle(tester);
     await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     await shot(tester, '6_equalizer_halfway');
   });
