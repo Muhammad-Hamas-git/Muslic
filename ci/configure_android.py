@@ -21,14 +21,25 @@ def patch_kts(path: pathlib.Path) -> None:
     s = path.read_text()
     s = s.replace("flutter.minSdkVersion", "23")
     s = s.replace("flutter.compileSdkVersion", "36")
+    # android/key.properties is loaded at the script's top level (inside
+    # android {}, `java` is a Gradle extension, not the java package).
+    # Imports must come before plugins {}; the loading code goes after it,
+    # just before android {}, at the script's top level.
+    imports = "import java.io.FileInputStream\nimport java.util.Properties\n\n"
+    loader = """// Release signing: android/key.properties is written by CI from the
+// ANDROID_KEYSTORE_* repository secrets (see PUBLISHING.md).
+val keyProps = Properties()
+val keyPropsFile = rootProject.file("key.properties")
+if (keyPropsFile.exists()) {
+    FileInputStream(keyPropsFile).use { stream -> keyProps.load(stream) }
+}
+
+android {"""
+    s, n = re.subn(r"^android \{", loader, s, count=1, flags=re.M)
+    if n != 1:
+        sys.exit("configure_android: android block not found in build.gradle.kts")
+    s = imports + s
     signing = '''
-    // Release signing: android/key.properties is written by CI from the
-    // ANDROID_KEYSTORE_* repository secrets (see PUBLISHING.md).
-    val keyProps = java.util.Properties()
-    val keyPropsFile = rootProject.file("key.properties")
-    if (keyPropsFile.exists()) {
-        keyPropsFile.inputStream().use { keyProps.load(it) }
-    }
     signingConfigs {
         create("release") {
             if (keyPropsFile.exists()) {
