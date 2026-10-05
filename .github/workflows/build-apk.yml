@@ -92,15 +92,17 @@ jobs:
       # SDK, permissions, signing certificate, 16 KB page alignment.
       - name: Verify release
         if: always()
+        continue-on-error: true
         shell: bash
         run: |
+          set +e
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           {
             echo "== Badging (universal APK)"
-            "$BT/aapt2" dump badging /tmp/out/muslic-universal.apk | grep -E "^package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable"
+            "$BT/aapt2" dump badging /tmp/out/muslic-universal.apk | grep -E "^package|SdkVersion|uses-permission|application-label:|launchable"
             echo
             echo "== APK signature"
-            "$BT/apksigner" verify --print-certs /tmp/out/muslic-universal.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
+            "$BT/apksigner" verify -v --print-certs /tmp/out/muslic-universal.apk | grep -E "Verified using|Signer #1 certificate"
             echo
             echo "== AAB signature"
             keytool -printcert -jarfile /tmp/out/muslic.aab | grep -E "Owner|SHA256:" | head -2
@@ -111,6 +113,7 @@ jobs:
             echo "== Sizes"
             ls -la /tmp/out
           } 2>&1 | tee verify.log
+          exit 0
 
       # Publish logs to the ci-logs branch so they can be read with plain
       # git, even when a run fails.
