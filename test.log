@@ -1,0 +1,16 @@
+
+::group::✅ Passing tests
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: artist in title replaces any artist tag
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: brackets removed, artist kept when title has no dash
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: release notes after a dash are dropped, not used as titles
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: track numbers are dropped
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: unspaced hyphens and all-bracket titles are left alone
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: library with mini player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: expanded player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: equalizer open
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: carousel scrolled by one song
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: player halfway through opening
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: equalizer halfway through opening
+::endgroup::
+
+🎉 11 tests passed.
