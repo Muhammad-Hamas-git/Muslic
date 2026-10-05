@@ -6,3 +6,10 @@ build/
 *.iml
 android/.gradle/
 android/local.properties
+
+# Signing keys never go in this public repo
+*.jks
+*.keystore
+*.p12
+*.base64
+android/key.properties

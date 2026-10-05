@@ -25,9 +25,14 @@ class SongCarousel extends StatefulWidget {
     required this.topBound,
     required this.bottomBound,
     required this.onSelect,
+    this.focusTrackId,
   });
 
   final List<Track> tracks;
+
+  /// When this changes to a song in [tracks], the carousel jumps to it
+  /// (used to show the restored last song on launch).
+  final int? focusTrackId;
 
   /// Screen y of the app bar bottom and the mini player top. The centred
   /// cover sits between them at [CarouselTuning.centerFraction].
@@ -50,6 +55,7 @@ class _SongCarouselState extends State<SongCarousel> {
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    if (widget.focusTrackId != null) _jumpToFocus();
   }
 
   @override
@@ -59,10 +65,22 @@ class _SongCarouselState extends State<SongCarousel> {
         (widget.tracks.isNotEmpty &&
             old.tracks.isNotEmpty &&
             old.tracks.first.id != widget.tracks.first.id);
-    if (changed && _scroll.hasClients) {
+    if (widget.focusTrackId != null &&
+        widget.focusTrackId != old.focusTrackId) {
+      _jumpToFocus();
+    } else if (changed && _scroll.hasClients) {
       _scroll.jumpTo(0);
       _centered.value = 0;
     }
+  }
+
+  void _jumpToFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final i = widget.tracks.indexWhere((t) => t.id == widget.focusTrackId);
+      if (i < 0 || !mounted || !_scroll.hasClients) return;
+      _scroll.jumpTo(i * _step);
+      _centered.value = i;
+    });
   }
 
   @override

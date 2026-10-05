@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -16,6 +17,7 @@ import 'settings_controller.dart';
 ///  - clip-safe boost via Android's LoudnessEnhancer, whose limiter
 ///    compresses peaks instead of hard-clipping
 ///  - background play and the media notification via just_audio_background
+///  - remembering the last song and position between launches
 class PlayerController extends ChangeNotifier {
   PlayerController(this._settings, this._art) {
     _loudness = AndroidLoudnessEnhancer()..setEnabled(true);
@@ -43,7 +45,26 @@ class PlayerController extends ChangeNotifier {
       debugPrint('müslic playback error: $e');
       if (_player.hasNext) _player.seekToNext();
     }));
+
+    // Remember where we are: on song change, on pause, every few seconds
+    // while playing, and whenever the app leaves the foreground.
+    _subs.add(_player.currentIndexStream.listen((_) => saveSession()));
+    _subs.add(_player.playingStream.listen((p) {
+      if (!p) saveSession();
+    }));
+    _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_player.playing) saveSession();
+    });
+    _lifecycle = AppLifecycleListener(
+      onHide: saveSession,
+      onPause: saveSession,
+      onDetach: saveSession,
+    );
   }
+
+  Timer? _saveTimer;
+  AppLifecycleListener? _lifecycle;
+  bool _restoreTried = false;
 
   static double get minRate => EqTuning.rateStops.first;
   static double get maxRate => EqTuning.rateStops.last;
@@ -86,8 +107,16 @@ class PlayerController extends ChangeNotifier {
       _player.duration ?? current?.duration ?? Duration.zero;
 
   /// Load [tracks] as the queue and start playback at [startIndex].
-  Future<void> playQueue(List<Track> tracks, int startIndex) async {
+  Future<void> playQueue(List<Track> tracks, int startIndex) =>
+      _load(tracks, startIndex, Duration.zero, play: true);
+
+  Future<void> _load(List<Track> tracks, int startIndex, Duration position,
+      {required bool play}) async {
     queue = List.of(tracks);
+    // Make sure the notification has art for the first few songs.
+    for (var i = startIndex; i < startIndex + 3 && i < queue.length; i++) {
+      await _art.sharpFile(queue[i]);
+    }
     final sources = [
       for (final t in queue)
         AudioSource.uri(
@@ -106,11 +135,13 @@ class PlayerController extends ChangeNotifier {
       await _player.setAudioSource(
         ConcatenatingAudioSource(children: sources),
         initialIndex: startIndex,
-        initialPosition: Duration.zero,
+        initialPosition: position,
       );
       await _applyParams();
-      _player.play();
+      if (play) _player.play();
       unawaited(_loadEqualizer());
+      _settings.saveSessionQueue([for (final t in queue) t.id]);
+      saveSession();
     } catch (e) {
       debugPrint('müslic: failed to set queue: $e');
     }
@@ -124,7 +155,54 @@ class PlayerController extends ChangeNotifier {
     final f = _art.sharpIfReady(t);
     if (f != null) return Uri.file(f.path);
     _art.sharpFile(t); // warm it for next time
-    return Uri.parse('content://media/external/audio/media/${t.id}/albumart');
+    // Album art URI from the media store; works on every Android version.
+    final album = t.albumId;
+    return album == null
+        ? Uri.parse('content://media/external/audio/media/${t.id}/albumart')
+        : Uri.parse('content://media/external/audio/albumart/$album');
+  }
+
+  /// Saves the current song and position (not the queue, which is saved
+  /// once when it changes).
+  void saveSession() {
+    if (!_settings.rememberLastSong || queue.isEmpty) return;
+    final i = _player.currentIndex;
+    if (i == null || i >= queue.length) return;
+    _settings.saveSessionPosition(
+        trackId: queue[i].id, position: _player.position);
+  }
+
+  /// Loads the last session (paused) if remembering is on and nothing is
+  /// playing yet. Returns the song it restored, so the carousel can show it.
+  /// Only runs once per app start.
+  Future<Track?> restoreSession(Map<int, Track> byId) async {
+    if (_restoreTried || queue.isNotEmpty) return null;
+    _restoreTried = true;
+    if (!_settings.rememberLastSong) return null;
+    final session = _settings.lastSession;
+    if (session == null) return null;
+    final tracks = <Track>[];
+    var start = -1;
+    for (final id in session.queueIds) {
+      final t = byId[id];
+      if (t == null) continue; // deleted or filtered out since
+      if (id == session.trackId && start < 0) start = tracks.length;
+      tracks.add(t);
+    }
+    if (start < 0) {
+      // Queue no longer contains the song; play it on its own if it exists.
+      final t = byId[session.trackId];
+      if (t == null) return null;
+      tracks
+        ..clear()
+        ..add(t);
+      start = 0;
+    }
+    final pos = session.position < tracks[start].duration
+        ? session.position
+        : Duration.zero;
+    await _load(tracks, start, pos, play: false);
+    return tracks[start];
   }
 
   Future<void> _applyParams() async {
@@ -248,6 +326,9 @@ class PlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
+    saveSession();
+    _saveTimer?.cancel();
+    _lifecycle?.dispose();
     for (final s in _subs) {
       s.cancel();
     }

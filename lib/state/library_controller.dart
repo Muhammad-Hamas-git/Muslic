@@ -27,6 +27,9 @@ class LibraryController extends ChangeNotifier {
   List<Track> tracks = [];
   String searchTerm = '';
 
+  /// Every scanned song by id (ignores filters and search).
+  Map<int, Track> get byId => {for (final t in _all) t.id: t};
+
   /// Distinct folders found on device (for the settings folder pickers).
   List<String> get discoveredFolders {
     final set = <String>{for (final t in _all) t.folder};
@@ -73,6 +76,10 @@ class LibraryController extends ChangeNotifier {
         notifyListeners();
         return;
       }
+      // Android 13+ hides the media notification (and so the lock screen
+      // and notification shade player) unless this is granted. Asked once;
+      // playback works either way.
+      await Permission.notification.request();
 
       final songs = await _query.querySongs(
         sortType: SongSortType.TITLE,

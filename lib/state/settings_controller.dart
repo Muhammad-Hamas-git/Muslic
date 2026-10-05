@@ -33,6 +33,7 @@ class SettingsController extends ChangeNotifier {
   // ---- Playback ----
   bool resumeOnHeadphones = false;
   bool rememberPlaybackSettings = true; // persist speed/pitch/gain
+  bool rememberLastSong = true; // resume last song and position on launch
   double lastSpeed = 1.0;
   double lastPitch = 1.0;
   double lastGainDb = 0.0;
@@ -57,6 +58,7 @@ class SettingsController extends ChangeNotifier {
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
+    rememberLastSong = _prefs.getBool('rememberLastSong') ?? true;
     lastSpeed = (_prefs.getDouble('lastSpeed') ?? 1.0).clamp(0.5, 2.0);
     lastPitch = (_prefs.getDouble('lastPitch') ?? 1.0).clamp(0.5, 2.0);
     lastGainDb = _prefs.getDouble('lastGainDb') ?? 0.0;
@@ -79,6 +81,7 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
+    await _prefs.setBool('rememberLastSong', rememberLastSong);
     await _prefs.setDouble('lastSpeed', lastSpeed);
     await _prefs.setDouble('lastPitch', lastPitch);
     await _prefs.setDouble('lastGainDb', lastGainDb);
@@ -164,6 +167,40 @@ class SettingsController extends ChangeNotifier {
     eqEnabled = enabled;
     eqGains = List.of(gains);
     _save();
+  }
+
+  void setRememberLastSong(bool v) {
+    rememberLastSong = v;
+    if (!v) {
+      _prefs.remove('sessionQueue');
+      _prefs.remove('sessionTrack');
+      _prefs.remove('sessionPositionMs');
+    }
+    _commit();
+  }
+
+  // ---- Last session (written often, so saved directly, no notify) ----
+
+  void saveSessionQueue(List<int> ids) =>
+      _prefs.setStringList('sessionQueue', [for (final i in ids) '$i']);
+
+  void saveSessionPosition({required int trackId, required Duration position}) {
+    _prefs.setInt('sessionTrack', trackId);
+    _prefs.setInt('sessionPositionMs', position.inMilliseconds);
+  }
+
+  ({List<int> queueIds, int trackId, Duration position})? get lastSession {
+    final track = _prefs.getInt('sessionTrack');
+    if (track == null) return null;
+    final ids = [
+      for (final s in _prefs.getStringList('sessionQueue') ?? const <String>[])
+        if (int.tryParse(s) case final int i) i
+    ];
+    return (
+      queueIds: ids,
+      trackId: track,
+      position: Duration(milliseconds: _prefs.getInt('sessionPositionMs') ?? 0),
+    );
   }
 
   void _commit() {

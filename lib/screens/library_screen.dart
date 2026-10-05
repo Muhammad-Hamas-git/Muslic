@@ -24,18 +24,34 @@ class _LibraryScreenState extends State<LibraryScreen>
   final _searchCtrl = TextEditingController();
   final _searchFocus = FocusNode();
   bool _searching = false;
+  int? _focusTrackId;
+  LibraryController? _library;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       UiAssets.precacheAll(context);
-      context.read<LibraryController>().scan();
+      _library = context.read<LibraryController>()
+        ..addListener(_maybeRestore);
+      _library!.scan();
     });
+  }
+
+  /// After the first successful scan, reload the last song (paused) and
+  /// centre it in the carousel.
+  Future<void> _maybeRestore() async {
+    final library = _library;
+    if (library == null || library.status != LibraryStatus.ready) return;
+    library.removeListener(_maybeRestore);
+    final track =
+        await context.read<PlayerController>().restoreSession(library.byId);
+    if (track != null && mounted) setState(() => _focusTrackId = track.id);
   }
 
   @override
   void dispose() {
+    _library?.removeListener(_maybeRestore);
     _expansion.dispose();
     _searchCtrl.dispose();
     _searchFocus.dispose();
@@ -92,6 +108,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                     topBound: appBarBottom,
                     bottomBound: miniTop,
                     onSelect: _onSelect,
+                    focusTrackId: _focusTrackId,
                   )
                 : _Status(library: library, searching: _searching),
           ),

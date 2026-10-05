@@ -128,6 +128,10 @@ class FakePlayer extends ChangeNotifier implements PlayerController {
   @override
   bool get eqReady => true;
   @override
+  Future<Track?> restoreSession(Map<int, Track> byId) async => null;
+  @override
+  void saveSession() {}
+  @override
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 

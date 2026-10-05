@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../services/artwork_cache.dart';
@@ -134,6 +135,22 @@ class SettingsScreen extends StatelessWidget {
                 'Keep your equalizer panel settings between launches.'),
             value: settings.rememberPlaybackSettings,
             onChanged: settings.setRememberPlaybackSettings,
+          ),
+          SwitchListTile(
+            title: const Text('Remember last song playing'),
+            subtitle: const Text(
+                'Reopen on the song you were playing, at the same spot.'),
+            value: settings.rememberLastSong,
+            onChanged: settings.setRememberLastSong,
+          ),
+          const _NotificationTile(),
+          ListTile(
+            leading: const Icon(Icons.battery_saver_outlined),
+            title: const Text('Keep playing in the background'),
+            subtitle: const Text(
+                'If music stops after a while with the screen off, set '
+                'müslic\'s battery usage to "Unrestricted" here.'),
+            onTap: openAppSettings,
           ),
           const Divider(height: 32),
           ListTile(
@@ -407,6 +424,66 @@ class _ArtworkCacheTile extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+
+/// Shows whether the playback notification (notification shade and lock
+/// screen controls) is allowed, and asks for it when it is not.
+class _NotificationTile extends StatefulWidget {
+  const _NotificationTile();
+
+  @override
+  State<_NotificationTile> createState() => _NotificationTileState();
+}
+
+class _NotificationTileState extends State<_NotificationTile>
+    with WidgetsBindingObserver {
+  PermissionStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Re-check when returning from the system settings screen.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final s = await Permission.notification.status;
+    if (mounted) setState(() => _status = s);
+  }
+
+  Future<void> _fix() async {
+    final s = await Permission.notification.request();
+    if (!s.isGranted) await openAppSettings();
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final granted = _status?.isGranted ?? true;
+    return ListTile(
+      leading: Icon(granted
+          ? Icons.notifications_active_outlined
+          : Icons.notifications_off_outlined),
+      title: const Text('Lock screen and notification controls'),
+      subtitle: Text(granted
+          ? 'On. Playback controls show in the notification shade and on the lock screen.'
+          : 'Off. Tap to allow notifications so the player shows outside the app.'),
+      onTap: granted ? null : _fix,
     );
   }
 }

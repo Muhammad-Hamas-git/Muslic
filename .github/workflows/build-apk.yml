@@ -1,4 +1,10 @@
-name: Build müslic APK
+name: Build müslic
+
+# Builds a signed Play Store bundle (.aab) and installable APKs on every
+# push to main. Signing uses the upload key stored in the repository
+# secrets ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD (see
+# PUBLISHING.md). Without them the build still works but is debug-signed,
+# which the Play Store rejects; verify.log says which key was used.
 
 on:
   push:
@@ -8,6 +14,11 @@ on:
 
 permissions:
   contents: write
+
+env:
+  # Every upload to Play needs a higher version code; the run number grows
+  # with each build.
+  BUILD_NUMBER: ${{ github.run_number }}
 
 jobs:
   build:
@@ -25,59 +36,91 @@ jobs:
           channel: stable
           cache: true
 
-      # Generate the platform scaffolding around the shipped sources.
+      # Generate the platform scaffolding around the shipped sources. The
+      # package name com.dotstudios.muslic comes from --org + project name.
       # flutter create overwrites the manifest, so ours is restored after.
       - name: Scaffold platform files
         run: |
           cp android/app/src/main/AndroidManifest.xml /tmp/Manifest.xml
-          flutter create . --project-name muslic --org app.muslic --platforms android
+          flutter create . --project-name muslic --org com.dotstudios --platforms android
           cp /tmp/Manifest.xml android/app/src/main/AndroidManifest.xml
           rm -f test/widget_test.dart
 
-      # just_audio_background needs minSdk 23.
-      - name: Raise minSdk to 23
-        run: |
-          set -e
-          for f in android/app/build.gradle android/app/build.gradle.kts; do
-            [ -f "$f" ] && sed -i "s/flutter\.compileSdkVersion/36/g" "$f"
-            if [ -f "$f" ]; then
-              sed -i 's/flutter\.minSdkVersion/23/g' "$f"
-            fi
-          done
+      - name: Configure Android project (SDK levels, plugin fixes, signing)
+        run: python3 ci/configure_android.py | tee configure.log
 
-      # Compatibility fixes for older plugins on current Gradle:
-      # missing namespace, and Java/Kotlin JVM target mismatch.
-      - name: Apply plugin compatibility fixes
+      - name: Install upload key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        shell: bash
         run: |
-          set -e
-          if [ -f android/build.gradle.kts ]; then
-            sed -i '1i apply(from = "namespace-fix.gradle")' android/build.gradle.kts
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            {
+              echo "storeFile=$RUNNER_TEMP/upload.jks"
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyAlias=upload"
+              echo "keyPassword=$KEYSTORE_PASSWORD"
+            } > android/key.properties
+            echo "Release signing: dot Studios upload key"
           else
-            sed -i '1i apply from: "namespace-fix.gradle"' android/build.gradle
+            echo "::warning::No upload key secrets set; this build is debug-signed and cannot go to the Play Store."
           fi
-          echo 'kotlin.jvm.target.validation.mode=IGNORE' >> android/gradle.properties
 
-      - name: Resolve dependencies
-        run: flutter pub get
+      - name: Resolve dependencies and app icons
+        run: |
+          flutter pub get
+          dart run flutter_launcher_icons
 
-      - name: Build release APK
+      - name: Analyze, test, build
         shell: bash
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log || true
           flutter test --update-goldens 2>&1 | tee test.log || true
-          flutter build apk --release 2>&1 | tee build.log
+          flutter build appbundle --release --build-number "$BUILD_NUMBER" 2>&1 | tee build.log
+          flutter build apk --release --build-number "$BUILD_NUMBER" 2>&1 | tee -a build.log
+          mkdir -p /tmp/out
+          cp build/app/outputs/bundle/release/app-release.aab /tmp/out/muslic.aab
+          cp build/app/outputs/flutter-apk/app-release.apk /tmp/out/muslic-universal.apk
+          # Smaller APK for modern phones (64-bit ARM only).
+          flutter build apk --release --build-number "$BUILD_NUMBER" --split-per-abi --target-platform android-arm64 2>&1 | tee -a build.log
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk /tmp/out/muslic-arm64.apk
 
-      # Publish the build log to the ci-logs branch so it can be read
-      # with plain git, even when a run fails.
+      # Checks the Play Store cares about: package name, version, target
+      # SDK, permissions, signing certificate, 16 KB page alignment.
+      - name: Verify release
+        if: always()
+        shell: bash
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          {
+            echo "== Badging (universal APK)"
+            "$BT/aapt2" dump badging /tmp/out/muslic-universal.apk | grep -E "^package|sdkVersion|targetSdkVersion|uses-permission|application-label:|launchable"
+            echo
+            echo "== APK signature"
+            "$BT/apksigner" verify --print-certs /tmp/out/muslic-universal.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
+            echo
+            echo "== AAB signature"
+            keytool -printcert -jarfile /tmp/out/muslic.aab | grep -E "Owner|SHA256:" | head -2
+            echo
+            echo "== 16 KB page alignment (Play requirement for Android 15+)"
+            "$BT/zipalign" -c -P 16 -v 4 /tmp/out/muslic-universal.apk | tail -1
+            echo
+            echo "== Sizes"
+            ls -la /tmp/out
+          } 2>&1 | tee verify.log
+
+      # Publish logs to the ci-logs branch so they can be read with plain
+      # git, even when a run fails.
       - name: Publish build log
         if: always()
         shell: bash
         run: |
           mkdir -p /tmp/logs
           cp build.log /tmp/logs/ 2>/dev/null || echo "no build log" > /tmp/logs/build.log
-          cp analyze.log /tmp/logs/ 2>/dev/null || true
-          cp test.log /tmp/logs/ 2>/dev/null || true
+          cp analyze.log test.log verify.log configure.log /tmp/logs/ 2>/dev/null || true
           cp -r test/screenshots /tmp/logs/ 2>/dev/null || true
           cp -r test/failures /tmp/logs/ 2>/dev/null || true
           cd /tmp/logs
@@ -86,22 +129,16 @@ jobs:
           git add -A && git commit -qm "Build log for ${GITHUB_SHA}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-logs
 
-      # Smaller APK for modern phones (64-bit ARM only).
-      - name: Build arm64 APK
+      - name: Publish builds to the apk branch
         shell: bash
         run: |
-          mkdir -p /tmp/out && cp build/app/outputs/flutter-apk/app-release.apk /tmp/out/muslic-universal.apk
-          flutter build apk --release --split-per-abi --target-platform android-arm64
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk /tmp/out/muslic-arm64.apk
-
-      - name: Publish APK to the apk branch
-        shell: bash
-        run: |
-          mkdir -p /tmp/apk && cp /tmp/out/muslic-arm64.apk /tmp/apk/muslic.apk
+          mkdir -p /tmp/apk
+          cp /tmp/out/muslic-arm64.apk /tmp/apk/muslic.apk
+          cp /tmp/out/muslic.aab /tmp/apk/muslic.aab
           cd /tmp/apk
           git init -q && git checkout -q -b apk
           git config user.name "müslic CI" && git config user.email "ci@users.noreply.github.com"
-          git add -A && git commit -qm "APK for ${GITHUB_SHA}"
+          git add -A && git commit -qm "Build ${BUILD_NUMBER} for ${GITHUB_SHA}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" apk
 
       - name: Publish GitHub release
@@ -110,11 +147,6 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: müslic build ${{ github.run_number }}
           files: |
+            /tmp/out/muslic.aab
             /tmp/out/muslic-arm64.apk
             /tmp/out/muslic-universal.apk
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: muslic-release-apk
-          path: /tmp/out/*.apk

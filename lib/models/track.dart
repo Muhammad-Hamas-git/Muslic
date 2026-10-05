@@ -16,6 +16,7 @@ class Track {
   final Duration duration;
   final DateTime dateModified;
   final String? fileExtension;
+  final int? albumId;
   final String? _rawTitle;
   final String? _rawArtist;
 
@@ -28,6 +29,7 @@ class Track {
     required this.duration,
     required this.dateModified,
     this.fileExtension,
+    this.albumId,
     String? rawTitle,
     String? rawArtist,
   })  : _rawTitle = rawTitle,
@@ -68,6 +70,7 @@ class Track {
       dateModified:
           DateTime.fromMillisecondsSinceEpoch((s.dateModified ?? 0) * 1000),
       fileExtension: s.fileExtension,
+      albumId: s.albumId,
     );
   }
 

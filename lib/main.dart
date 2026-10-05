@@ -16,8 +16,13 @@ Future<void> main() async {
 
   // Media session + notification shade player + lock screen controls.
   await JustAudioBackground.init(
-    androidNotificationChannelId: 'app.muslic.playback',
-    androidNotificationChannelName: 'müslic playback',
+    androidNotificationChannelId: 'com.dotstudios.muslic.playback',
+    androidNotificationChannelName: 'Playback',
+    androidNotificationChannelDescription:
+        'Player controls in the notification shade and on the lock screen',
+    // White "mü" silhouette (android/app/src/main/res/drawable-*/).
+    androidNotificationIcon: 'drawable/ic_stat_muslic',
+    notificationColor: const Color(0xFF111111),
     androidNotificationOngoing: true,
     androidStopForegroundOnPause: true,
     preloadArtwork: true,
