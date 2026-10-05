@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The notification icon is looked up by name at runtime, so tell the
-     release resource shrinker not to remove it. -->
+<!-- Resources looked up by name at runtime, which the release resource
+     shrinker cannot see. Without this, release builds lose them:
+       * ic_stat_muslic: our notification icon (set in lib/main.dart)
+       * audio_service_*: the play/pause/skip/stop button icons that
+         audio_service puts on the media notification. If they are missing,
+         Android 13+ silently drops the whole notification, so there is no
+         notification shade or lock screen player (headset buttons still
+         work because they go through the media session). -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_stat_muslic" />
+    tools:keep="@drawable/ic_stat_muslic,@drawable/audio_service_*" />

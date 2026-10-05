@@ -101,6 +101,9 @@ jobs:
             echo "== Badging (universal APK)"
             "$BT/aapt2" dump badging /tmp/out/muslic-universal.apk | grep -E "^package|SdkVersion|uses-permission|application-label:|launchable"
             echo
+            echo "== Notification icons kept by the resource shrinker (all 8 must be listed)"
+            "$BT/aapt2" dump resources /tmp/out/muslic-universal.apk | grep -oE "drawable/(audio_service_[a-z_]+|ic_stat_muslic)" | sort -u
+            echo
             echo "== APK signature"
             "$BT/apksigner" verify -v --print-certs /tmp/out/muslic-universal.apk | grep -E "Verified using|Signer #1 certificate"
             echo
