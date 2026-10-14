@@ -32,12 +32,19 @@ for k, dy in enumerate([-gap, 0, gap]):
 glyph = glyph.resize((W, H), Image.LANCZOS)
 shadow = glyph.filter(ImageFilter.GaussianBlur(10)).transform((W, H), Image.AFFINE, (1, 0, 0, 0, 1, -8))
 
+# Inside of the glass circle, for the "lit" on-state.
+disc = Image.new('L', (W, H), 0)
+ImageDraw.Draw(disc).ellipse((300, 90, 975, 772), fill=255)
+disc = disc.filter(ImageFilter.GaussianBlur(60))
+
 def compose(glow, alpha):
     out = Image.composite(Image.new('RGB', (W, H), (8, 8, 8)), base, shadow.point(lambda v: int(v * 0.5)))
     if glow:
-        g = glyph.filter(ImageFilter.GaussianBlur(40))
-        out = Image.composite(Image.new('RGB', (W, H), (255, 255, 255)), out, g.point(lambda v: int(v * 0.8)))
-    return Image.composite(Image.new('RGB', (W, H), (232, 234, 236)), out, glyph.point(lambda v: int(v * alpha)))
+        # The whole circle lights up softly, plus a bright halo on the waves.
+        out = Image.composite(Image.new('RGB', (W, H), (150, 150, 155)), out, disc.point(lambda v: int(v * 0.55)))
+        g = glyph.filter(ImageFilter.GaussianBlur(45))
+        out = Image.composite(Image.new('RGB', (W, H), (255, 255, 255)), out, g.point(lambda v: min(255, int(v * 1.1))))
+    return Image.composite(Image.new('RGB', (W, H), (255, 255, 255) if glow else (232, 234, 236)), out, glyph.point(lambda v: int(v * alpha)))
 
 for name, img in [('ambient', compose(False, 0.92)), ('ambient_on', compose(True, 1.0))]:
     img.save(f'{root}/ui_source/{name}.png')

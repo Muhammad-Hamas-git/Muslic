@@ -41,6 +41,31 @@ Values you can tune by hand:
 `test/screenshot_test.dart` renders the main screens with made-up songs; CI
 publishes the images to the `ci-logs` branch under `screenshots/`.
 
+
+## Sound effects (reverb, echo, ambient)
+
+Android has no built-in echo, and its built-in reverb is ignored on many
+phones, so müslic has its own. `packages/just_audio` is just_audio 0.9.46
+with three additions (all marked "müslic" in the code):
+
+- `FxAudioProcessor.java`: reverb (Freeverb) + echo (feedback delay),
+  smooth parameter changes, soft limiting so nothing clips
+- `FxProcessorChain.java`: runs it after the speed/pitch stage, so slowed
+  songs keep a natural reverb tail
+- `MuslicFx.java`: the `com.dotstudios.muslic/fx` channel used by
+  `lib/services/audio_fx.dart`
+- audio offload is turned off, because offloaded audio skips all effects
+
+Tuning: `lib/debug/ambient_tuning.dart` (ambient button and the Reverb/Echo
+sliders). To hear changes without rebuilding, render a song on your computer
+with the same processor (needs Java and ffmpeg):
+
+    python tools/fx_preview/preview.py song.mp3 --compare
+
+Other tuning files: `lib/debug/ui_tuning.dart` (button bounce, loop/shuffle
+size, scroll click volume and voices, carousel), `lib/debug/blur_tuning.dart`,
+and `lib/ui/skin.dart` for theme colours.
+
 ## Project layout
 
 ```

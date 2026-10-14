@@ -25,12 +25,14 @@ class AmbientTuning {
 
   // ---- Reverb (Freeverb) ----------------------------------------------
 
-  /// Level of the dry (original) signal. Slightly below 1 leaves headroom
-  /// for the reverb and pushes the song "back into the room".
-  static const double dry = 0.85;
+  /// Level of the dry (original) signal. Below 1 makes room for the reverb
+  /// so ambient is not louder than the original (these defaults measure
+  /// about +1 dB) and pushes the song "back into the room".
+  static const double dry = 0.72;
 
-  /// Reverb level, 0..1. 0.35 is lush; above 0.6 gets washy.
-  static const double reverbWet = 0.38;
+  /// Reverb level, 0..1. 0.25 is lush; above 0.4 gets washy and loud
+  /// (lower [dry] to compensate).
+  static const double reverbWet = 0.25;
 
   /// Room size, 0..1. Controls how long the tail lasts.
   /// 0.5 = small room, 0.85 = hall, 0.95 = cathedral.
@@ -49,7 +51,7 @@ class AmbientTuning {
   // ---- Echo (delay) ---------------------------------------------------
 
   /// Echo level, 0..1. Keep it subtle; reverb does most of the work.
-  static const double echoWet = 0.18;
+  static const double echoWet = 0.12;
 
   /// Time between repeats, in ms (1..2000). 300 to 450 suits slowed songs.
   static const double echoMs = 420;
@@ -72,7 +74,7 @@ class FxTuning {
   static const List<double> stops = [0, 0.25, 0.5, 0.75, 1.0];
 
   // Reverb at full (slider at 100%).
-  static const double reverbWetMax = 0.55;
+  static const double reverbWetMax = 0.32;
   static const double roomSize = 0.82;
   static const double damping = 0.4;
   static const double width = 1.0;
@@ -83,6 +85,12 @@ class FxTuning {
   static const double echoMs = 360;
   static const double echoFeedback = 0.38;
   static const double echoToneHz = 3500;
+
+  /// The original signal is lowered as reverb/echo go up, so the sliders
+  /// add space without making songs louder (measured within ±2 dB).
+  /// dry = 1 - dryDuckReverb * reverb - dryDuckEcho * echo.
+  static const double dryDuckReverb = 0.30;
+  static const double dryDuckEcho = 0.10;
 
   /// Fade time when a slider moves, in ms.
   static const double fadeMs = 150;

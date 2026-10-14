@@ -319,7 +319,9 @@ class PlayerController extends ChangeNotifier {
       );
     } else {
       AudioFx.apply(
-        dry: 1.0,
+        dry: 1.0 -
+            FxTuning.dryDuckReverb * reverb -
+            FxTuning.dryDuckEcho * echo,
         reverbWet: reverb * FxTuning.reverbWetMax,
         roomSize: FxTuning.roomSize,
         damping: FxTuning.damping,
