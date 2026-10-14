@@ -15,6 +15,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:muslic/models/track.dart';
 import 'package:muslic/screens/library_screen.dart';
 import 'package:muslic/services/artwork_cache.dart';
+import 'package:muslic/services/nav_sound.dart';
 import 'package:muslic/state/library_controller.dart';
 import 'package:muslic/state/player_controller.dart';
 import 'package:muslic/state/settings_controller.dart';
@@ -128,6 +129,12 @@ class FakePlayer extends ChangeNotifier implements PlayerController {
   @override
   bool get eqReady => true;
   @override
+  bool ambient = false;
+  @override
+  double reverb = 0.25;
+  @override
+  double echo = 0;
+  @override
   Future<Track?> restoreSession(Map<int, Track> byId) async => null;
   @override
   void saveSession() {}
@@ -153,6 +160,7 @@ void main() {
   late Directory tmp;
 
   setUpAll(() async {
+    NavSound.enabled = false;
     await _loadFonts();
     SharedPreferences.setMockInitialValues({});
     final messenger =
@@ -168,7 +176,8 @@ void main() {
     tmp = await Directory.systemTemp.createTemp('muslic_art');
   });
 
-  Future<void> pumpApp(WidgetTester tester, Widget home) async {
+  Future<void> pumpApp(WidgetTester tester, Widget home,
+      {AppTheme theme = AppTheme.light, bool ambient = false}) async {
     debugDisableShadows = false; // reset in shot()
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3.0;
@@ -190,9 +199,11 @@ void main() {
     await tester.pumpWidget(MultiProvider(
       providers: [
         Provider.value(value: cache),
-        ChangeNotifierProvider(create: (_) => SettingsController(prefs)),
+        ChangeNotifierProvider(
+            create: (_) => SettingsController(prefs)..theme = theme),
         ChangeNotifierProvider<LibraryController>(create: (_) => FakeLibrary()),
-        ChangeNotifierProvider<PlayerController>(create: (_) => FakePlayer()),
+        ChangeNotifierProvider<PlayerController>(
+            create: (_) => FakePlayer()..ambient = ambient),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -272,5 +283,27 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
     await shot(tester, '6_equalizer_halfway');
+  });
+
+  testWidgets('dark library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), theme: AppTheme.dark);
+    await shot(tester, '7_dark_library');
+  });
+
+  testWidgets('dark player with ambient on', (tester) async {
+    await pumpApp(tester, const LibraryScreen(),
+        theme: AppTheme.dark, ambient: true);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await shot(tester, '8_dark_player_ambient');
+  });
+
+  testWidgets('dark equalizer', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), theme: AppTheme.dark);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await settle(tester);
+    await shot(tester, '9_dark_equalizer');
   });
 }

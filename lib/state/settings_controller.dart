@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum LibrarySort { artist, name, dateModified }
 
+/// App themes. Add new ones here and in lib/ui/skin.dart.
+enum AppTheme { light, dark }
+
 /// All user-tunable settings, persisted to SharedPreferences.
 ///
 /// Library filters:
@@ -29,6 +32,8 @@ class SettingsController extends ChangeNotifier {
   LibrarySort sort = LibrarySort.artist;
   bool sortAscending = true;
   bool tidyTitles = true; // shorten "Artist - Song (Official Video)" style names
+  AppTheme theme = AppTheme.light;
+  bool scrollSound = true; // click when the carousel passes a song
 
   // ---- Playback ----
   bool resumeOnHeadphones = false;
@@ -37,6 +42,9 @@ class SettingsController extends ChangeNotifier {
   double lastSpeed = 1.0;
   double lastPitch = 1.0;
   double lastGainDb = 0.0;
+  double lastReverb = 0.0; // 0..1, the equalizer panel's Reverb slider
+  double lastEcho = 0.0; // 0..1, the Echo slider
+  bool lastAmbient = false;
 
   // ---- Equalizer ----
   bool eqEnabled = true;
@@ -55,6 +63,9 @@ class SettingsController extends ChangeNotifier {
         LibrarySort.artist;
     sortAscending = _prefs.getBool('sortAscendingV2') ?? true;
     tidyTitles = _prefs.getBool('tidyTitles') ?? true;
+    theme = AppTheme.values.asNameMap()[_prefs.getString('theme')] ??
+        AppTheme.light;
+    scrollSound = _prefs.getBool('scrollSound') ?? true;
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
@@ -62,6 +73,9 @@ class SettingsController extends ChangeNotifier {
     lastSpeed = (_prefs.getDouble('lastSpeed') ?? 1.0).clamp(0.5, 2.0);
     lastPitch = (_prefs.getDouble('lastPitch') ?? 1.0).clamp(0.5, 2.0);
     lastGainDb = _prefs.getDouble('lastGainDb') ?? 0.0;
+    lastReverb = _prefs.getDouble('lastReverb') ?? 0.0;
+    lastEcho = _prefs.getDouble('lastEcho') ?? 0.0;
+    lastAmbient = _prefs.getBool('lastAmbient') ?? false;
     eqEnabled = _prefs.getBool('eqEnabled') ?? true;
     eqGains = (_prefs.getStringList('eqGains') ?? [])
         .map((e) => double.tryParse(e) ?? 0.0)
@@ -78,6 +92,8 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setString('sortBy', sort.name);
     await _prefs.setBool('sortAscendingV2', sortAscending);
     await _prefs.setBool('tidyTitles', tidyTitles);
+    await _prefs.setString('theme', theme.name);
+    await _prefs.setBool('scrollSound', scrollSound);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
@@ -85,6 +101,9 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setDouble('lastSpeed', lastSpeed);
     await _prefs.setDouble('lastPitch', lastPitch);
     await _prefs.setDouble('lastGainDb', lastGainDb);
+    await _prefs.setDouble('lastReverb', lastReverb);
+    await _prefs.setDouble('lastEcho', lastEcho);
+    await _prefs.setBool('lastAmbient', lastAmbient);
     await _prefs.setBool('eqEnabled', eqEnabled);
     await _prefs.setStringList(
         'eqGains', [for (final g in eqGains) g.toStringAsFixed(2)]);
@@ -140,6 +159,16 @@ class SettingsController extends ChangeNotifier {
     _commit();
   }
 
+  void setTheme(AppTheme t) {
+    theme = t;
+    _commit();
+  }
+
+  void setScrollSound(bool v) {
+    scrollSound = v;
+    _commit();
+  }
+
   void setTidyTitles(bool v) {
     tidyTitles = v;
     _commit();
@@ -155,11 +184,20 @@ class SettingsController extends ChangeNotifier {
     _commit();
   }
 
-  void savePlaybackParams(
-      {required double speed, required double pitch, required double gainDb}) {
+  void savePlaybackParams({
+    required double speed,
+    required double pitch,
+    required double gainDb,
+    required double reverb,
+    required double echo,
+    required bool ambient,
+  }) {
     lastSpeed = speed;
     lastPitch = pitch;
     lastGainDb = gainDb;
+    lastReverb = reverb;
+    lastEcho = echo;
+    lastAmbient = ambient;
     _save(); // no notify needed, purely persistence
   }
 

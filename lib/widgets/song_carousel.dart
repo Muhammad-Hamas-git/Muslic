@@ -6,6 +6,7 @@ import 'package:flutter/physics.dart';
 import '../debug/ui_tuning.dart';
 import '../models/track.dart';
 import '../ui/design.dart';
+import '../ui/skin.dart';
 import 'art.dart';
 
 /// The library carousel from Figma: a vertical stack of album covers on
@@ -26,7 +27,12 @@ class SongCarousel extends StatefulWidget {
     required this.bottomBound,
     required this.onSelect,
     this.focusTrackId,
+    this.onSongPassed,
   });
+
+  /// Called each time scrolling brings a different song to the centre
+  /// (used for the scroll click). Not called for programmatic jumps.
+  final VoidCallback? onSongPassed;
 
   final List<Track> tracks;
 
@@ -69,8 +75,10 @@ class _SongCarouselState extends State<SongCarousel> {
         widget.focusTrackId != old.focusTrackId) {
       _jumpToFocus();
     } else if (changed && _scroll.hasClients) {
+      _silent = true;
       _scroll.jumpTo(0);
       _centered.value = 0;
+      _silent = false;
     }
   }
 
@@ -78,8 +86,10 @@ class _SongCarouselState extends State<SongCarousel> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final i = widget.tracks.indexWhere((t) => t.id == widget.focusTrackId);
       if (i < 0 || !mounted || !_scroll.hasClients) return;
+      _silent = true;
       _scroll.jumpTo(i * _step);
       _centered.value = i;
+      _silent = false;
     });
   }
 
@@ -92,11 +102,16 @@ class _SongCarouselState extends State<SongCarousel> {
 
   double get _page => _scroll.hasClients ? _scroll.offset / _step : 0;
 
+  bool _silent = false;
+
   void _onScroll() {
     final n = widget.tracks.length;
     if (n == 0) return;
     final i = _page.round().clamp(0, n - 1);
-    if (i != _centered.value) _centered.value = i;
+    if (i != _centered.value) {
+      _centered.value = i;
+      if (!_silent) widget.onSongPassed?.call();
+    }
   }
 
   /// Scrolls so [index] is centred.
@@ -246,6 +261,7 @@ class _Cover extends StatelessWidget {
         : CarouselTuning.whiteWash.last +
             (1 - CarouselTuning.whiteWash.last) * ((distance - 3) / 0.5);
     final shadow = (1 - distance * 2).clamp(0.0, 1.0);
+    final skin = Skin.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -253,7 +269,8 @@ class _Cover extends StatelessWidget {
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25 * shadow),
+                  color: skin.heroShadow
+                      .withValues(alpha: skin.heroShadowOpacity * shadow),
                   offset: Offset(0, f(4)),
                   blurRadius: f(75),
                   spreadRadius: f(25),
@@ -266,7 +283,7 @@ class _Cover extends StatelessWidget {
           TrackArt(track: track, decodeWidth: 640),
           if (wash > 0)
             ColoredBox(
-                color: Colors.white.withValues(alpha: wash.clamp(0.0, 1.0))),
+                color: skin.wash.withValues(alpha: wash.clamp(0.0, 1.0))),
         ],
       ),
     );
@@ -309,13 +326,14 @@ class _SideTitle extends StatelessWidget {
         children: [
           column(
             track.title.toUpperCase(),
-            Txt.kumbh(f(96), letterSpacing: f(29.76)),
+            Txt.kumbh(f(96),
+                color: Skin.of(context).title, letterSpacing: f(29.76)),
             f(95.5),
             f(119),
           ),
           column(
             track.artist,
-            Txt.kumbh(f(48), color: Palette.muted),
+            Txt.kumbh(f(48), color: Skin.of(context).artist),
             f(208),
             f(60),
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../ui/design.dart';
+import '../ui/skin.dart';
+import 'blend_image.dart';
 
 /// The top bar on every screen: logo centred, optional icons left/right.
 /// Positions follow Figma (logo 285 x 119 at y 55, icons 72 px at y 79),
@@ -33,7 +35,7 @@ class MuslicAppBar extends StatelessWidget {
             left: 0,
             right: 0,
             child: Center(
-              child: Image.asset(UiAssets.logo,
+              child: Image.asset(Skin.of(context).logo,
                   width: f(285), height: f(119), fit: BoxFit.contain),
             ),
           ),
@@ -63,16 +65,18 @@ class AppBarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: InkResponse(
-        onTap: onTap,
-        radius: f(60),
-        child: Opacity(
-          opacity: 0.75,
-          child: Image.asset(asset, width: f(72), height: f(72)),
-        ),
+    final tint = Skin.of(context).icon;
+    return Bouncy(
+      onTap: onTap,
+      semanticLabel: tooltip,
+      child: Opacity(
+        opacity: 0.75,
+        child: Image.asset(asset,
+            width: f(72),
+            height: f(72),
+            // Dark theme: the black Figma icons are drawn white.
+            color: tint,
+            colorBlendMode: tint == null ? null : BlendMode.srcIn),
       ),
     );
   }
@@ -90,18 +94,14 @@ class AppBarGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: InkResponse(
-        onTap: onTap,
-        radius: f(60),
-        child: SizedBox(
-          width: f(72),
-          height: f(72),
-          child: Icon(icon,
-              size: f(72), color: Colors.black.withValues(alpha: 0.75)),
-        ),
+    final color = (Skin.of(context).icon ?? Colors.black).withValues(alpha: 0.75);
+    return Bouncy(
+      onTap: onTap,
+      semanticLabel: tooltip,
+      child: SizedBox(
+        width: f(72),
+        height: f(72),
+        child: Icon(icon, size: f(72), color: color),
       ),
     );
   }

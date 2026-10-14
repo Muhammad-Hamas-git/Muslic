@@ -30,6 +30,14 @@ dependencies:
   image: ^4.2.0
   # App storage folder for the artwork cache.
   path_provider: ^2.1.4
+  # Overlapping carousel click sounds (separate from the music player).
+  audioplayers: ^6.8.1
+
+# just_audio with müslic's reverb/echo processor added (packages/just_audio,
+# see FxAudioProcessor.java). Based on just_audio 0.9.46.
+dependency_overrides:
+  just_audio:
+    path: packages/just_audio
 
 dev_dependencies:
   flutter_lints: ^4.0.0
@@ -52,6 +60,7 @@ flutter:
 
   assets:
     - assets/ui/
+    - assets/sounds/
 
   fonts:
     - family: Inter

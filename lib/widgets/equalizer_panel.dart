@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/ambient_tuning.dart';
 import '../debug/ui_tuning.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
@@ -81,6 +82,34 @@ class EqualizerPanel extends StatelessWidget {
             ),
           ),
           _RateRow(
+            label: 'Reverb',
+            display: _amount(player.ambient ? null : player.reverb),
+            slider: SnapSlider(
+              stops: FxTuning.stops,
+              value: player.ambient
+                  ? AmbientTuning.reverbWet / FxTuning.reverbWetMax
+                  : player.reverb,
+              origin: 0,
+              thickness: f(EqTuning.rateLine),
+              knobRadius: f(EqTuning.rateKnob),
+              onChanged: player.setReverb,
+            ),
+          ),
+          _RateRow(
+            label: 'Echo',
+            display: _amount(player.ambient ? null : player.echo),
+            slider: SnapSlider(
+              stops: FxTuning.stops,
+              value: player.ambient
+                  ? AmbientTuning.echoWet / FxTuning.echoWetMax
+                  : player.echo,
+              origin: 0,
+              thickness: f(EqTuning.rateLine),
+              knobRadius: f(EqTuning.rateKnob),
+              onChanged: player.setEcho,
+            ),
+          ),
+          _RateRow(
             label: 'Boost',
             display: player.gainDb == 0
                 ? '0 dB'
@@ -115,6 +144,13 @@ class EqualizerPanel extends StatelessWidget {
     );
   }
 
+  /// "Off", "25%" ... ; null means ambient mode is controlling it.
+  static String _amount(double? v) => v == null
+      ? 'Ambient'
+      : v == 0
+          ? 'Off'
+          : '${(v * 100).round()}%';
+
   static String _rate(double v) =>
       v.toStringAsFixed(v * 10 == (v * 10).roundToDouble() ? 1 : 2);
 }
@@ -128,8 +164,9 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
-    return GestureDetector(
+    return Bouncy(
       onTap: onTap,
+      semanticLabel: label,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: f(28), vertical: f(10)),
         decoration: BoxDecoration(
@@ -225,13 +262,13 @@ class _RateRow extends StatelessWidget {
     final f = Fg.of(context);
     final text = Txt.inter(f(26), FontWeight.w500);
     return SizedBox(
-      height: f(70),
+      height: f(62),
       child: Row(
         children: [
           SizedBox(width: f(105), child: Text(label, style: text)),
           Expanded(child: slider),
           SizedBox(
-            width: f(105),
+            width: f(125),
             child: Text(display, textAlign: TextAlign.right, style: text),
           ),
         ],

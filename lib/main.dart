@@ -10,6 +10,7 @@ import 'state/library_controller.dart';
 import 'state/player_controller.dart';
 import 'state/settings_controller.dart';
 import 'ui/design.dart';
+import 'ui/skin.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,14 +29,9 @@ Future<void> main() async {
     preloadArtwork: true,
   );
 
-  // White app with dark status bar icons, drawn edge to edge.
+  // Drawn edge to edge; status bar icon colours follow the theme (see
+  // the AnnotatedRegion in MuslicApp).
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
 
   final results = await Future.wait([
     SharedPreferences.getInstance(),
@@ -67,34 +63,56 @@ class MuslicApp extends StatelessWidget {
               PlayerController(c.read<SettingsController>(), artwork),
         ),
       ],
-      child: MaterialApp(
-        title: 'müslic',
-        debugShowCheckedModeBanner: false,
-        theme: _theme(),
-        home: const LibraryScreen(),
-      ),
+      child: Builder(builder: (context) {
+        final skin = Skin.of(context);
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: skin.systemBars,
+          child: MaterialApp(
+            title: 'müslic',
+            debugShowCheckedModeBanner: false,
+            theme: _theme(Brightness.light),
+            darkTheme: _theme(Brightness.dark),
+            themeMode: skin.dark ? ThemeMode.dark : ThemeMode.light,
+            builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+              value: skin.systemBars,
+              child: child!,
+            ),
+            home: const LibraryScreen(),
+          ),
+        );
+      }),
     );
   }
 
-  /// Light theme matching the Figma file: white pages, near-black ink,
-  /// Inter throughout. Used by the settings screen and dialogs; the
-  /// library and player draw their own Figma styling.
-  ThemeData _theme() {
+  /// Material theme for the settings screen and dialogs (the library and
+  /// player draw their own Figma styling). Light: white pages, near-black
+  /// ink. Dark: pure black pages, white ink. Inter throughout.
+  ThemeData _theme(Brightness b) {
+    final dark = b == Brightness.dark;
+    final ink = dark ? Colors.white : Palette.ink;
+    final page = dark ? Colors.black : Colors.white;
     final scheme = ColorScheme.fromSeed(
       seedColor: Palette.ink,
-      brightness: Brightness.light,
-      surface: Colors.white,
-    ).copyWith(primary: Palette.ink, secondary: Palette.blue);
+      brightness: b,
+      surface: page,
+    ).copyWith(
+      primary: ink,
+      onPrimary: page,
+      secondary: Palette.blue,
+      surface: page,
+      onSurface: ink,
+    );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: b,
       colorScheme: scheme,
       fontFamily: 'Inter',
-      scaffoldBackgroundColor: Colors.white,
-      cardTheme: const CardThemeData(
+      scaffoldBackgroundColor: page,
+      cardTheme: CardThemeData(
         elevation: 0,
-        color: Color(0xFFF4F4F2),
-        shape: RoundedRectangleBorder(
+        color: dark ? const Color(0xFF151517) : const Color(0xFFF4F4F2),
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
         ),
       ),

@@ -10,6 +10,7 @@ import '../debug/ui_tuning.dart';
 import '../models/track.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
+import '../ui/skin.dart';
 import 'art.dart';
 import 'blend_image.dart';
 import 'equalizer_panel.dart';
@@ -127,7 +128,9 @@ class _PlayerShellState extends State<PlayerShell>
                     child: IgnorePointer(
                       ignoring: t < 0.05,
                       child: ColoredBox(
-                          color: Colors.white.withValues(alpha: t)),
+                          color: Skin.of(context)
+                              .background
+                              .withValues(alpha: t)),
                     ),
                   ),
                 Positioned.fromRect(
@@ -149,8 +152,15 @@ class _PlayerShellState extends State<PlayerShell>
                               track: track,
                               zoom: lerpDouble(BlurTuning.collapsedZoom,
                                   BlurTuning.expandedZoom, t)!,
-                              darken: lerpDouble(BlurTuning.collapsedDarken,
-                                  BlurTuning.expandedDarken, t)!,
+                              // Theme dimming (dark: half brightness) stacks
+                              // with the readability darkening.
+                              darken: 1 -
+                                  (1 -
+                                          lerpDouble(
+                                              BlurTuning.collapsedDarken,
+                                              BlurTuning.expandedDarken,
+                                              t)!) *
+                                      (1 - Skin.of(context).blurDim),
                             ),
                           ),
                           if (collapsedFade > 0)
@@ -245,6 +255,9 @@ class _ExpandedLayout {
     return _ExpandedLayout._(
       minimize: Rect.fromLTWH(f(120), f(67), f(96), f(96)),
       eqButton: Rect.fromLTWH(f(759), f(56), f(162), f(107)),
+      // Same image canvas as the EQ button, one glass circle (97 px) plus a
+      // 28 px gap to its left.
+      ambientButton: Rect.fromLTWH(f(759 - 125), f(56), f(162), f(107)),
       panel: panel,
       art: art,
       eqPanel: Rect.fromLTRB(panel.left, f(190), panel.right, panel.top - f(30)),
@@ -254,6 +267,7 @@ class _ExpandedLayout {
   const _ExpandedLayout._({
     required this.minimize,
     required this.eqButton,
+    required this.ambientButton,
     required this.panel,
     required this.art,
     required this.eqPanel,
@@ -261,6 +275,7 @@ class _ExpandedLayout {
 
   final Rect minimize;
   final Rect eqButton;
+  final Rect ambientButton;
   final Rect panel;
   final Rect art;
   final Rect eqPanel;
@@ -424,6 +439,17 @@ class _ExpandedContent extends StatelessWidget {
           ),
         ),
         Positioned.fromRect(
+          rect: layout.ambientButton,
+          child: GlassButton(
+            asset: player.ambient ? UiAssets.ambientOn : UiAssets.ambient,
+            width: layout.ambientButton.width,
+            height: layout.ambientButton.height,
+            opacity: fade,
+            onTap: () => player.setAmbient(!player.ambient),
+            semanticLabel: player.ambient ? 'Ambient on' : 'Ambient off',
+          ),
+        ),
+        Positioned.fromRect(
           rect: layout.eqButton,
           child: GlassButton(
             asset: UiAssets.equalizer,
@@ -465,15 +491,17 @@ class _ExpandedContent extends StatelessWidget {
                 style: Txt.inter(f(32), FontWeight.w400)),
           ),
         ),
+        // Shuffle and loop are drawn bigger than Figma for easier tapping,
+        // centred on their Figma positions (ButtonTuning.loopShuffleScale).
         at(
-          60,
-          280,
+          87 - 27 * ButtonTuning.loopShuffleScale,
+          302.5 - 22.5 * ButtonTuning.loopShuffleScale,
           GlassButton(
             asset: UiAssets.shuffle,
             blendMode: BlendMode.srcOver,
             opacity: (player.shuffle ? 1.0 : 0.45) * fade,
-            width: f(54),
-            height: f(45),
+            width: f(54 * ButtonTuning.loopShuffleScale),
+            height: f(45 * ButtonTuning.loopShuffleScale),
             onTap: player.toggleShuffle,
             semanticLabel: player.shuffle ? 'Shuffle on' : 'Shuffle off',
           ),
@@ -514,7 +542,11 @@ class _ExpandedContent extends StatelessWidget {
             semanticLabel: 'Next',
           ),
         ),
-        at(659, 274, _LoopButton(player: player, fade: fade)),
+        at(
+          681.5 - 22.5 * ButtonTuning.loopShuffleScale,
+          296.5 - 22.5 * ButtonTuning.loopShuffleScale,
+          _LoopButton(player: player, fade: fade),
+        ),
         Positioned(
           left: p.left + f(60) - f(15),
           top: p.top + f(391) - f(10),
@@ -574,8 +606,8 @@ class _LoopButton extends StatelessWidget {
           asset: UiAssets.loop,
           blendMode: BlendMode.srcOver,
           opacity: (mode == LoopMode.off ? 0.45 : 1.0) * fade,
-          width: f(45),
-          height: f(45),
+          width: f(45 * ButtonTuning.loopShuffleScale),
+          height: f(45 * ButtonTuning.loopShuffleScale),
           onTap: player.cycleLoopMode,
           semanticLabel: switch (mode) {
             LoopMode.off => 'Repeat off',

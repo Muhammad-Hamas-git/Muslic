@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 import '../debug/ui_tuning.dart';
 import '../state/library_controller.dart';
 import '../state/player_controller.dart';
+import '../services/nav_sound.dart';
+import '../state/settings_controller.dart';
 import '../ui/design.dart';
+import '../ui/skin.dart';
 import '../widgets/muslic_app_bar.dart';
 import '../widgets/player_shell.dart';
 import '../widgets/song_carousel.dart';
@@ -32,6 +35,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       UiAssets.precacheAll(context);
+      NavSound.instance.preload();
       _library = context.read<LibraryController>()
         ..addListener(_maybeRestore);
       _library!.scan();
@@ -95,7 +99,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     final miniTop = size.height - pad.bottom - f(54 + 186);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Skin.of(context).background,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -108,6 +112,11 @@ class _LibraryScreenState extends State<LibraryScreen>
                     topBound: appBarBottom,
                     bottomBound: miniTop,
                     onSelect: _onSelect,
+                    onSongPassed: () {
+                      if (context.read<SettingsController>().scrollSound) {
+                        NavSound.instance.click();
+                      }
+                    },
                     focusTrackId: _focusTrackId,
                   )
                 : _Status(library: library, searching: _searching),
@@ -211,12 +220,14 @@ class _Fade extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Figma: transparent to white, reaching solid white at 63.5%.
+    // (Black in the dark theme.)
+    final bg = Skin.of(context).background;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: fromTop ? Alignment.bottomCenter : Alignment.topCenter,
           end: fromTop ? Alignment.topCenter : Alignment.bottomCenter,
-          colors: const [Color(0x00FFFFFF), Colors.white],
+          colors: [bg.withValues(alpha: 0), bg],
           stops: const [0.0, 0.635],
         ),
       ),
@@ -238,18 +249,20 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
+    final skin = Skin.of(context);
+    final ink = skin.dark ? Colors.white : Palette.ink;
     return Material(
-      color: Colors.white,
+      color: skin.field,
       elevation: 6,
-      shadowColor: Colors.black26,
+      shadowColor: skin.dark ? Colors.black : Colors.black26,
       borderRadius: BorderRadius.circular(f(60)),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
         textInputAction: TextInputAction.search,
-        style: Txt.inter(f(36), FontWeight.w400, color: Palette.ink),
-        cursorColor: Palette.ink,
+        style: Txt.inter(f(36), FontWeight.w400, color: ink),
+        cursorColor: ink,
         decoration: InputDecoration(
           hintText: 'Search title, artist or album',
           hintStyle:
@@ -271,6 +284,8 @@ class _Status extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
+    final skin = Skin.of(context);
+    final ink = skin.dark ? Colors.white : Palette.ink;
     void openSettings() => Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
 
@@ -321,7 +336,7 @@ class _Status extends StatelessWidget {
           width: 28,
           height: 28,
           child:
-              CircularProgressIndicator(strokeWidth: 2.5, color: Palette.ink),
+              CircularProgressIndicator(strokeWidth: 2.5, color: Colors.grey),
         ),
       );
     }
@@ -331,11 +346,11 @@ class _Status extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: f(150), color: Palette.ink),
+          Icon(icon, size: f(150), color: ink),
           SizedBox(height: f(40)),
           Text(title,
               textAlign: TextAlign.center,
-              style: Txt.inter(f(52), FontWeight.w700, color: Palette.ink)),
+              style: Txt.inter(f(52), FontWeight.w700, color: ink)),
           SizedBox(height: f(20)),
           Text(body,
               textAlign: TextAlign.center,
@@ -344,12 +359,15 @@ class _Status extends StatelessWidget {
             SizedBox(height: f(60)),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: Palette.ink,
+                backgroundColor: ink,
+                foregroundColor: skin.background,
                 padding: EdgeInsets.symmetric(
                     horizontal: f(60), vertical: f(30)),
               ),
               onPressed: onAction,
-              child: Text(action, style: Txt.inter(f(36), FontWeight.w600)),
+              child: Text(action,
+                  style: Txt.inter(f(36), FontWeight.w600,
+                      color: skin.background)),
             ),
           ],
         ],

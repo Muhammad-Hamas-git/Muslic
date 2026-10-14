@@ -60,3 +60,39 @@ class EqTuning {
   static const double rateKnob = 20;
   static const double rateLine = 6;
 }
+
+/// The press "bounce" on buttons (glass player buttons, app bar icons,
+/// equalizer pills).
+class ButtonTuning {
+  ButtonTuning._();
+
+  /// Size while pressed (1.0 = no change).
+  static const double pressedScale = 0.86;
+
+  /// How fast the button dips when pressed.
+  static const Duration pressIn = Duration(milliseconds: 90);
+
+  /// Release spring. Lower damping = more overshoot and wobble; higher
+  /// stiffness = snappier. Critical (no overshoot) is 2 * sqrt(stiffness).
+  static const double springStiffness = 520;
+  static const double springDamping = 16;
+
+  /// Loop and shuffle size relative to Figma (1.25 = 25% bigger).
+  static const double loopShuffleScale = 1.25;
+}
+
+/// The click when the carousel passes a song.
+class ScrollSoundTuning {
+  ScrollSoundTuning._();
+
+  /// Volume, 0..1 (relative to the media volume).
+  static const double volume = 0.55;
+
+  /// How many clicks can sound at once. Fast scrolls layer clicks over each
+  /// other; once all voices are busy the oldest one restarts.
+  static const int voices = 8;
+
+  /// Ignore a new click if the last one started less than this ago
+  /// (protects against a flood during very fast flings).
+  static const Duration minGap = Duration(milliseconds: 28);
+}

@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
+import '../debug/ambient_tuning.dart';
 import '../debug/ui_tuning.dart';
+import '../services/audio_fx.dart';
 import '../models/track.dart';
 import '../services/artwork_cache.dart';
 import 'settings_controller.dart';
@@ -31,7 +33,11 @@ class PlayerController extends ChangeNotifier {
       speed = snap(_settings.lastSpeed, EqTuning.rateStops);
       pitch = snap(_settings.lastPitch, EqTuning.rateStops);
       gainDb = snap(_settings.lastGainDb, EqTuning.boostStops);
+      reverb = snap(_settings.lastReverb, FxTuning.stops);
+      echo = snap(_settings.lastEcho, FxTuning.stops);
+      ambient = _settings.lastAmbient;
     }
+    _applyFx(instant: true);
     eqEnabled = _settings.eqEnabled;
 
     _subs.add(_player.playerStateStream.listen((_) => notifyListeners()));
@@ -84,6 +90,13 @@ class PlayerController extends ChangeNotifier {
   double speed = 1.0;
   double pitch = 1.0;
   double gainDb = 0.0; // dB, one of EqTuning.boostStops
+  double reverb = 0.0; // 0..1, one of FxTuning.stops
+  double echo = 0.0; // 0..1, one of FxTuning.stops
+
+  /// Ambient (slowed + reverb) mode, see lib/debug/ambient_tuning.dart.
+  bool ambient = false;
+  ({double speed, double pitch, double reverb, double echo})? _beforeAmbient;
+  Timer? _ramp;
 
   // Equalizer state. Bands are only known once audio has been loaded.
   bool eqEnabled = true;
@@ -288,7 +301,121 @@ class PlayerController extends ChangeNotifier {
     await _player.setShuffleModeEnabled(enable);
   }
 
+  /// Sends the current reverb/echo state to the audio processor.
+  void _applyFx({bool instant = false}) {
+    if (ambient) {
+      AudioFx.apply(
+        dry: AmbientTuning.dry,
+        reverbWet: AmbientTuning.reverbWet,
+        roomSize: AmbientTuning.roomSize,
+        damping: AmbientTuning.damping,
+        width: AmbientTuning.width,
+        preDelayMs: AmbientTuning.preDelayMs,
+        delayWet: AmbientTuning.echoWet,
+        delayMs: AmbientTuning.echoMs,
+        feedback: AmbientTuning.echoFeedback,
+        toneHz: AmbientTuning.echoToneHz,
+        fadeMs: instant ? 1 : AmbientTuning.fxFadeMs,
+      );
+    } else {
+      AudioFx.apply(
+        dry: 1.0,
+        reverbWet: reverb * FxTuning.reverbWetMax,
+        roomSize: FxTuning.roomSize,
+        damping: FxTuning.damping,
+        width: FxTuning.width,
+        preDelayMs: FxTuning.preDelayMs,
+        delayWet: echo * FxTuning.echoWetMax,
+        delayMs: FxTuning.echoMs,
+        feedback: FxTuning.echoFeedback,
+        toneHz: FxTuning.echoToneHz,
+        fadeMs: instant ? 1 : (_wasAmbientFade ? AmbientTuning.fxFadeMs : FxTuning.fadeMs),
+      );
+    }
+    _wasAmbientFade = false;
+  }
+
+  bool _wasAmbientFade = false;
+
+  /// Turns ambient (slowed + reverb) on or off. Speed and pitch glide to
+  /// the ambient values while the effects fade in; turning it off glides
+  /// back to what was set before.
+  Future<void> setAmbient(bool on) async {
+    if (on == ambient) return;
+    if (on) {
+      _beforeAmbient = (speed: speed, pitch: pitch, reverb: reverb, echo: echo);
+      ambient = true;
+      _applyFx();
+      _glideTo(AmbientTuning.speed, AmbientTuning.pitch);
+    } else {
+      final b = _beforeAmbient ??
+          (speed: 1.0, pitch: 1.0, reverb: 0.0, echo: 0.0);
+      ambient = false;
+      reverb = b.reverb;
+      echo = b.echo;
+      _wasAmbientFade = true;
+      _applyFx();
+      _glideTo(b.speed, b.pitch);
+    }
+    _persist();
+    notifyListeners();
+  }
+
+  void _glideTo(double toSpeed, double toPitch) {
+    _ramp?.cancel();
+    final fromSpeed = speed, fromPitch = pitch;
+    final steps = AmbientTuning.ramp == Duration.zero ? 1 : AmbientTuning.rampSteps;
+    final tick = AmbientTuning.ramp ~/ steps;
+    var i = 0;
+    void step() {
+      i++;
+      final t = Curves.easeInOut.transform(i / steps);
+      speed = fromSpeed + (toSpeed - fromSpeed) * t;
+      pitch = fromPitch + (toPitch - fromPitch) * t;
+      _player.setSpeed(speed);
+      _player.setPitch(pitch);
+      if (i >= steps) {
+        _ramp?.cancel();
+        _persist();
+        notifyListeners();
+      }
+    }
+
+    if (steps == 1) {
+      step();
+    } else {
+      _ramp = Timer.periodic(tick, (_) => step());
+    }
+  }
+
+  /// Leaving ambient by hand: keep its speed/pitch but drop its effects in
+  /// favour of the sliders.
+  void _leaveAmbientForManual() {
+    if (!ambient) return;
+    _ramp?.cancel();
+    ambient = false;
+    _beforeAmbient = null;
+  }
+
+  void setReverb(double v) {
+    _leaveAmbientForManual();
+    reverb = snap(v, FxTuning.stops);
+    _applyFx();
+    _persist();
+    notifyListeners();
+  }
+
+  void setEcho(double v) {
+    _leaveAmbientForManual();
+    echo = snap(v, FxTuning.stops);
+    _applyFx();
+    _persist();
+    notifyListeners();
+  }
+
   Future<void> setSpeed(double v) async {
+    _leaveAmbientForManual();
+    _applyFx();
     speed = snap(v, EqTuning.rateStops);
     await _player.setSpeed(speed);
     _persist();
@@ -296,6 +423,8 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> setPitch(double v) async {
+    _leaveAmbientForManual();
+    _applyFx();
     pitch = snap(v, EqTuning.rateStops);
     await _player.setPitch(pitch);
     _persist();
@@ -310,9 +439,15 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> resetRates() async {
+    _ramp?.cancel();
+    ambient = false;
+    _beforeAmbient = null;
     speed = 1.0;
     pitch = 1.0;
     gainDb = 0.0;
+    reverb = 0.0;
+    echo = 0.0;
+    _applyFx();
     await _applyParams();
     _persist();
     notifyListeners();
@@ -320,7 +455,14 @@ class PlayerController extends ChangeNotifier {
 
   void _persist() {
     if (_settings.rememberPlaybackSettings) {
-      _settings.savePlaybackParams(speed: speed, pitch: pitch, gainDb: gainDb);
+      _settings.savePlaybackParams(
+        speed: speed,
+        pitch: pitch,
+        gainDb: gainDb,
+        reverb: reverb,
+        echo: echo,
+        ambient: ambient,
+      );
     }
   }
 
@@ -328,6 +470,7 @@ class PlayerController extends ChangeNotifier {
   void dispose() {
     saveSession();
     _saveTimer?.cancel();
+    _ramp?.cancel();
     _lifecycle?.dispose();
     for (final s in _subs) {
       s.cancel();

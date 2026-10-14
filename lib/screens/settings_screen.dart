@@ -18,7 +18,6 @@ class SettingsScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           MuslicAppBar(
@@ -37,6 +36,20 @@ class SettingsScreen extends StatelessWidget {
             child: Text('Settings',
                 style: Theme.of(context).textTheme.headlineSmall),
           ),
+          _SectionHeader('Themes'),
+          for (final (theme, label, hint) in [
+            (AppTheme.light, 'Light', 'White pages, as designed'),
+            (AppTheme.dark, 'Dark', 'Black pages, dimmed album art'),
+          ])
+            ListTile(
+              title: Text(label),
+              subtitle: Text(hint),
+              trailing: settings.theme == theme
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () => settings.setTheme(theme),
+            ),
+          const Divider(height: 32),
           _SectionHeader('Library order'),
           for (final (sort, label, hint) in [
             (LibrarySort.artist, 'Artist', 'A to Z by artist, then song'),
@@ -130,11 +143,18 @@ class SettingsScreen extends StatelessWidget {
           const Divider(height: 32),
           _SectionHeader('Playback'),
           SwitchListTile(
-            title: const Text('Remember speed, pitch and boost'),
+            title: const Text('Remember sound settings'),
             subtitle: const Text(
-                'Keep your equalizer panel settings between launches.'),
+                'Keep speed, pitch, boost, reverb, echo and ambient between launches.'),
             value: settings.rememberPlaybackSettings,
             onChanged: settings.setRememberPlaybackSettings,
+          ),
+          SwitchListTile(
+            title: const Text('Scroll sound'),
+            subtitle: const Text(
+                'A soft click as each song passes in the carousel.'),
+            value: settings.scrollSound,
+            onChanged: settings.setScrollSound,
           ),
           SwitchListTile(
             title: const Text('Remember last song playing'),

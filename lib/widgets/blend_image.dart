@@ -1,6 +1,9 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+
+import '../debug/ui_tuning.dart';
 
 /// Paints an asset image with a layer blend mode, like Figma's
 /// "Layer > Screen". Flutter's Image widget cannot do this (its blend mode
@@ -143,8 +146,76 @@ class _BlendPainter extends CustomPainter {
       old.sliceScale != sliceScale;
 }
 
-/// A tappable [BlendImage] that dips slightly while pressed.
-class GlassButton extends StatefulWidget {
+/// Wraps any button with the press "bounce": it dips while held and springs
+/// back with a slight overshoot on release. Tuning: [ButtonTuning].
+class Bouncy extends StatefulWidget {
+  const Bouncy({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final String? semanticLabel;
+
+  @override
+  State<Bouncy> createState() => _BouncyState();
+}
+
+class _BouncyState extends State<Bouncy> with SingleTickerProviderStateMixin {
+  late final AnimationController _scale = AnimationController.unbounded(
+    vsync: this,
+    value: 1.0,
+  );
+
+  @override
+  void dispose() {
+    _scale.dispose();
+    super.dispose();
+  }
+
+  void _down() => _scale.animateTo(ButtonTuning.pressedScale,
+      duration: ButtonTuning.pressIn, curve: Curves.easeOut);
+
+  void _release() => _scale.animateWith(SpringSimulation(
+        const SpringDescription(
+          mass: 1,
+          stiffness: ButtonTuning.springStiffness,
+          damping: ButtonTuning.springDamping,
+        ),
+        _scale.value,
+        1.0,
+        _scale.velocity,
+      ));
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: widget.semanticLabel,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _down(),
+        onTapCancel: _release,
+        onTapUp: (_) => _release(),
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: _scale,
+          // A plain transform: no extra layer, so screen blending still
+          // sees the background.
+          builder: (context, child) =>
+              Transform.scale(scale: _scale.value, child: child),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// A tappable [BlendImage] with the press bounce.
+class GlassButton extends StatelessWidget {
   const GlassButton({
     super.key,
     required this.asset,
@@ -165,34 +236,14 @@ class GlassButton extends StatefulWidget {
   final String? semanticLabel;
 
   @override
-  State<GlassButton> createState() => _GlassButtonState();
-}
-
-class _GlassButtonState extends State<GlassButton> {
-  bool _down = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.semanticLabel,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _down = true),
-        onTapCancel: () => setState(() => _down = false),
-        onTapUp: (_) => setState(() => _down = false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _down ? 0.9 : 1.0,
-          duration: const Duration(milliseconds: 110),
-          curve: Curves.easeOut,
-          child: SizedBox(
-            width: widget.width,
-            height: widget.height,
-            child: BlendImage(widget.asset,
-                blendMode: widget.blendMode, opacity: widget.opacity),
-          ),
-        ),
+    return Bouncy(
+      onTap: onTap,
+      semanticLabel: semanticLabel,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: BlendImage(asset, blendMode: blendMode, opacity: opacity),
       ),
     );
   }
