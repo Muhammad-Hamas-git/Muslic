@@ -45,6 +45,7 @@ class SettingsController extends ChangeNotifier {
   double lastReverb = 0.0; // 0..1, the equalizer panel's Reverb slider
   double lastEcho = 0.0; // 0..1, the Echo slider
   bool lastAmbient = false;
+  String loopMode = 'off'; // off / all / one, always remembered
 
   // ---- Equalizer ----
   bool eqEnabled = true;
@@ -76,6 +77,7 @@ class SettingsController extends ChangeNotifier {
     lastReverb = _prefs.getDouble('lastReverb') ?? 0.0;
     lastEcho = _prefs.getDouble('lastEcho') ?? 0.0;
     lastAmbient = _prefs.getBool('lastAmbient') ?? false;
+    loopMode = _prefs.getString('loopMode') ?? 'off';
     eqEnabled = _prefs.getBool('eqEnabled') ?? true;
     eqGains = (_prefs.getStringList('eqGains') ?? [])
         .map((e) => double.tryParse(e) ?? 0.0)
@@ -199,6 +201,11 @@ class SettingsController extends ChangeNotifier {
     lastEcho = echo;
     lastAmbient = ambient;
     _save(); // no notify needed, purely persistence
+  }
+
+  void saveLoopMode(String mode) {
+    loopMode = mode;
+    _prefs.setString('loopMode', mode);
   }
 
   void saveEqualizer({required bool enabled, required List<double> gains}) {

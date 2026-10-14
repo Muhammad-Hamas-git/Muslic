@@ -86,7 +86,7 @@ class ScrollSoundTuning {
   ScrollSoundTuning._();
 
   /// Volume, 0..1 (relative to the media volume).
-  static const double volume = 0.55;
+  static const double volume = 0.275;
 
   /// How many clicks can sound at once. Fast scrolls layer clicks over each
   /// other; once all voices are busy the oldest one restarts.

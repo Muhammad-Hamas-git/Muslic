@@ -34,10 +34,7 @@ class MuslicAppBar extends StatelessWidget {
             top: top + f(55 - statusShift),
             left: 0,
             right: 0,
-            child: Center(
-              child: Image.asset(Skin.of(context).logo,
-                  width: f(285), height: f(119), fit: BoxFit.contain),
-            ),
+            child: Center(child: _Logo(width: f(285), height: f(119))),
           ),
           if (leading != null)
             Positioned(
@@ -49,6 +46,27 @@ class MuslicAppBar extends StatelessWidget {
                 child: trailing!),
         ],
       ),
+    );
+  }
+}
+
+/// Light and dark logos cross-faded by the skin's darkness, so the logo
+/// follows the theme animation.
+class _Logo extends StatelessWidget {
+  const _Logo({required this.width, required this.height});
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = Skin.of(context).darkness;
+    Widget img(String a) =>
+        Image.asset(a, width: width, height: height, fit: BoxFit.contain);
+    return Stack(
+      children: [
+        if (d < 1) Opacity(opacity: 1 - d, child: img(UiAssets.logo)),
+        if (d > 0) Opacity(opacity: d, child: img(UiAssets.logoDark)),
+      ],
     );
   }
 }
@@ -76,7 +94,7 @@ class AppBarIcon extends StatelessWidget {
             height: f(72),
             // Dark theme: the black Figma icons are drawn white.
             color: tint,
-            colorBlendMode: tint == null ? null : BlendMode.srcIn),
+            colorBlendMode: BlendMode.srcIn),
       ),
     );
   }
@@ -94,7 +112,7 @@ class AppBarGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = Fg.of(context);
-    final color = (Skin.of(context).icon ?? Colors.black).withValues(alpha: 0.75);
+    final color = Skin.of(context).icon.withValues(alpha: 0.75);
     return Bouncy(
       onTap: onTap,
       semanticLabel: tooltip,

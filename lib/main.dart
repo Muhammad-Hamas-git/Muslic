@@ -63,8 +63,7 @@ class MuslicApp extends StatelessWidget {
               PlayerController(c.read<SettingsController>(), artwork),
         ),
       ],
-      child: Builder(builder: (context) {
-        final skin = Skin.of(context);
+      child: SkinHost(builder: (context, skin) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: skin.systemBars,
           child: MaterialApp(

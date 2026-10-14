@@ -14,6 +14,8 @@ import 'package:image/image.dart' as img;
 import 'package:just_audio/just_audio.dart';
 import 'package:muslic/models/track.dart';
 import 'package:muslic/screens/library_screen.dart';
+import 'package:muslic/screens/settings_screen.dart';
+import 'package:muslic/ui/skin.dart';
 import 'package:muslic/services/artwork_cache.dart';
 import 'package:muslic/services/nav_sound.dart';
 import 'package:muslic/state/library_controller.dart';
@@ -131,9 +133,13 @@ class FakePlayer extends ChangeNotifier implements PlayerController {
   @override
   bool ambient = false;
   @override
-  double reverb = 0.25;
+  double reverb = 0.5;
   @override
   double echo = 0;
+  @override
+  bool get reverbOn => reverb > 0;
+  @override
+  bool get echoOn => echo > 0;
   @override
   Future<Track?> restoreSession(Map<int, Track> byId) async => null;
   @override
@@ -205,10 +211,14 @@ void main() {
         ChangeNotifierProvider<PlayerController>(
             create: (_) => FakePlayer()..ambient = ambient),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(fontFamily: 'Inter'),
-        home: home,
+      child: SkinHost(
+        builder: (context, skin) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+              fontFamily: 'Inter',
+              brightness: skin.dark ? Brightness.dark : Brightness.light),
+          home: home,
+        ),
       ),
     ));
     // Let file images decode (real I/O), then settle frames.
@@ -231,8 +241,8 @@ void main() {
   // just for the capture (the framework expects the flag reset afterwards).
   Future<void> shot(WidgetTester tester, String name) async {
     try {
-      await expectLater(
-          find.byType(LibraryScreen), matchesGoldenFile('screenshots/$name.png'));
+      await expectLater(find.byType(MaterialApp),
+          matchesGoldenFile('screenshots/$name.png'));
     } finally {
       debugDisableShadows = true;
     }
@@ -290,9 +300,10 @@ void main() {
     await shot(tester, '7_dark_library');
   });
 
-  testWidgets('dark player with ambient on', (tester) async {
+  testWidgets('ambient on with the light theme turns the app dark',
+      (tester) async {
     await pumpApp(tester, const LibraryScreen(),
-        theme: AppTheme.dark, ambient: true);
+        theme: AppTheme.light, ambient: true);
     await tester.tapAt(const Offset(110, 700));
     await settle(tester);
     await shot(tester, '8_dark_player_ambient');
@@ -305,5 +316,24 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Equalizer'));
     await settle(tester);
     await shot(tester, '9_dark_equalizer');
+  });
+
+  testWidgets('settings light', (tester) async {
+    await pumpApp(tester, const SettingsScreen());
+    await shot(tester, '10_settings_light');
+  });
+
+  testWidgets('settings dark', (tester) async {
+    await pumpApp(tester, const SettingsScreen(), theme: AppTheme.dark);
+    await shot(tester, '11_settings_dark');
+  });
+
+  testWidgets('equalizer with ambient on', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), ambient: true);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await settle(tester);
+    await shot(tester, '12_equalizer_ambient');
   });
 }

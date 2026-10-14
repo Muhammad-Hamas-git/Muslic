@@ -241,16 +241,16 @@ class _ExpandedLayout {
     final panel =
         Rect.fromLTWH(f(120), restTop + f(eqPanelDrop) * eq, f(787), f(458));
 
-    // Figma: art 773 px, 118 px above the panel, top at 274. On shorter
-    // phones the space above the art shrinks first (down to just below the
-    // top buttons), then the gap to the panel, and only then the art. The
-    // art keeps its resting position while the panel moves.
-    const minTop = 190.0, minGap = 60.0;
-    final side =
-        (restTop - f(minTop + minGap)).clamp(f(300), f(773)).toDouble();
-    final gap = (restTop - f(minTop) - side).clamp(f(minGap), f(118)).toDouble();
-    final art = Rect.fromLTWH((card.width - side) / 2, restTop - gap - side,
-        side, side);
+    // The art sits centred between the top buttons and the control panel,
+    // with equal gaps above and below. It is Figma's 773 px when there is
+    // room, and shrinks only if the gaps would drop below [minGap].
+    const buttonsBottom = 163.0; // bottom of minimize/EQ/ambient (Figma)
+    const minGap = 40.0;
+    final room = restTop - f(buttonsBottom);
+    final side = (room - 2 * f(minGap)).clamp(f(300), f(773)).toDouble();
+    final gap = (room - side) / 2;
+    final art = Rect.fromLTWH(
+        (card.width - side) / 2, f(buttonsBottom) + gap, side, side);
 
     return _ExpandedLayout._(
       minimize: Rect.fromLTWH(f(120), f(67), f(96), f(96)),

@@ -27,12 +27,14 @@ class AmbientTuning {
 
   /// Level of the dry (original) signal. Below 1 makes room for the reverb
   /// so ambient is not louder than the original (these defaults measure
-  /// about +1 dB) and pushes the song "back into the room".
-  static const double dry = 0.72;
+  /// 0 dB change with nothing reaching the limiter) and pushes the song
+  /// "back into the room".
+  static const double dry = 0.80;
 
-  /// Reverb level, 0..1. 0.25 is lush; above 0.4 gets washy and loud
-  /// (lower [dry] to compensate).
-  static const double reverbWet = 0.25;
+  /// Reverb level, 0..1. Capped at the Reverb toggle's "On" level (0.16,
+  /// i.e. 50%): above that it starts to distort. If you raise it, lower
+  /// [dry] to keep the loudness the same.
+  static const double reverbWet = 0.16;
 
   /// Room size, 0..1. Controls how long the tail lasts.
   /// 0.5 = small room, 0.85 = hall, 0.95 = cathedral.
@@ -51,6 +53,7 @@ class AmbientTuning {
   // ---- Echo (delay) ---------------------------------------------------
 
   /// Echo level, 0..1. Keep it subtle; reverb does most of the work.
+  /// Stay at or below the Echo toggle's "On" level (0.225, i.e. 50%).
   static const double echoWet = 0.12;
 
   /// Time between repeats, in ms (1..2000). 300 to 450 suits slowed songs.
@@ -66,21 +69,21 @@ class AmbientTuning {
   static const double fxFadeMs = 900;
 }
 
-/// The Reverb and Echo sliders in the equalizer panel. Each slider snaps to
-/// [stops] (0 = off, 1 = full), which scale the "full" values below.
+/// The Reverb and Echo toggles in the equalizer panel. "On" plays them at
+/// [onLevel] of the full values below (0.5 = 50%; higher distorts).
 class FxTuning {
   FxTuning._();
 
-  static const List<double> stops = [0, 0.25, 0.5, 0.75, 1.0];
+  static const double onLevel = 0.5;
 
-  // Reverb at full (slider at 100%).
+  // Reverb at full (100%). On = onLevel x this.
   static const double reverbWetMax = 0.32;
   static const double roomSize = 0.82;
   static const double damping = 0.4;
   static const double width = 1.0;
   static const double preDelayMs = 25;
 
-  // Echo at full (slider at 100%).
+  // Echo at full (100%). On = onLevel x this.
   static const double echoWetMax = 0.45;
   static const double echoMs = 360;
   static const double echoFeedback = 0.38;
@@ -92,6 +95,6 @@ class FxTuning {
   static const double dryDuckReverb = 0.30;
   static const double dryDuckEcho = 0.10;
 
-  /// Fade time when a slider moves, in ms.
+  /// Fade time when a toggle changes, in ms.
   static const double fadeMs = 150;
 }

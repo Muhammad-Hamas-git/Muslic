@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../debug/ambient_tuning.dart';
 import '../debug/ui_tuning.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
@@ -57,56 +56,80 @@ class EqualizerPanel extends StatelessWidget {
           SizedBox(height: f(20)),
           Expanded(child: _Bands(player: player)),
           SizedBox(height: f(24)),
-          _RateRow(
-            label: 'Speed',
-            display: '${_rate(player.speed)}x',
-            slider: SnapSlider(
-              stops: EqTuning.rateStops,
-              value: player.speed,
-              origin: 1.0,
-              thickness: f(EqTuning.rateLine),
-              knobRadius: f(EqTuning.rateKnob),
-              onChanged: player.setSpeed,
-            ),
-          ),
-          _RateRow(
-            label: 'Pitch',
-            display: '${_rate(player.pitch)}x',
-            slider: SnapSlider(
-              stops: EqTuning.rateStops,
-              value: player.pitch,
-              origin: 1.0,
-              thickness: f(EqTuning.rateLine),
-              knobRadius: f(EqTuning.rateKnob),
-              onChanged: player.setPitch,
-            ),
-          ),
-          _RateRow(
-            label: 'Reverb',
-            display: _amount(player.ambient ? null : player.reverb),
-            slider: SnapSlider(
-              stops: FxTuning.stops,
-              value: player.ambient
-                  ? AmbientTuning.reverbWet / FxTuning.reverbWetMax
-                  : player.reverb,
-              origin: 0,
-              thickness: f(EqTuning.rateLine),
-              knobRadius: f(EqTuning.rateKnob),
-              onChanged: player.setReverb,
-            ),
-          ),
-          _RateRow(
-            label: 'Echo',
-            display: _amount(player.ambient ? null : player.echo),
-            slider: SnapSlider(
-              stops: FxTuning.stops,
-              value: player.ambient
-                  ? AmbientTuning.echoWet / FxTuning.echoWetMax
-                  : player.echo,
-              origin: 0,
-              thickness: f(EqTuning.rateLine),
-              knobRadius: f(EqTuning.rateKnob),
-              onChanged: player.setEcho,
+          // Ambient owns speed, pitch, reverb and echo: their controls slide
+          // away while it is on and come back when it is off.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 380),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.topCenter,
+                children: [...previous, if (current != null) current],
+              ),
+              child: player.ambient
+                  ? Padding(
+                      key: const ValueKey('ambient'),
+                      padding: EdgeInsets.only(bottom: f(18)),
+                      child: Text(
+                        'Ambient is on. Speed, pitch, reverb and echo are set '
+                        'for you; turn ambient off to change them.',
+                        style: Txt.inter(f(24), FontWeight.w400,
+                            color: Colors.white.withValues(alpha: 0.8)),
+                      ),
+                    )
+                  : Column(
+                      key: const ValueKey('manual'),
+                      children: [
+                        _RateRow(
+                          label: 'Speed',
+                          display: '${_rate(player.speed)}x',
+                          slider: SnapSlider(
+                            stops: EqTuning.rateStops,
+                            value: player.speed,
+                            origin: 1.0,
+                            thickness: f(EqTuning.rateLine),
+                            knobRadius: f(EqTuning.rateKnob),
+                            onChanged: player.setSpeed,
+                          ),
+                        ),
+                        _RateRow(
+                          label: 'Pitch',
+                          display: '${_rate(player.pitch)}x',
+                          slider: SnapSlider(
+                            stops: EqTuning.rateStops,
+                            value: player.pitch,
+                            origin: 1.0,
+                            thickness: f(EqTuning.rateLine),
+                            knobRadius: f(EqTuning.rateKnob),
+                            onChanged: player.setPitch,
+                          ),
+                        ),
+                        SizedBox(height: f(8)),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _Toggle(
+                                label: 'Reverb',
+                                on: player.reverbOn,
+                                onTap: () =>
+                                    player.setReverbOn(!player.reverbOn),
+                              ),
+                            ),
+                            SizedBox(width: f(20)),
+                            Expanded(
+                              child: _Toggle(
+                                label: 'Echo',
+                                on: player.echoOn,
+                                onTap: () => player.setEchoOn(!player.echoOn),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: f(14)),
+                      ],
+                    ),
             ),
           ),
           _RateRow(
@@ -144,15 +167,47 @@ class EqualizerPanel extends StatelessWidget {
     );
   }
 
-  /// "Off", "25%" ... ; null means ambient mode is controlling it.
-  static String _amount(double? v) => v == null
-      ? 'Ambient'
-      : v == 0
-          ? 'Off'
-          : '${(v * 100).round()}%';
-
   static String _rate(double v) =>
       v.toStringAsFixed(v * 10 == (v * 10).roundToDouble() ? 1 : 2);
+}
+
+/// A full-width glass switch (Reverb, Echo). Lit when on.
+class _Toggle extends StatelessWidget {
+  const _Toggle({required this.label, required this.on, required this.onTap});
+  final String label;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fg.of(context);
+    return Bouncy(
+      onTap: onTap,
+      semanticLabel: '$label ${on ? 'on' : 'off'}',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: f(66),
+        padding: EdgeInsets.symmetric(horizontal: f(26)),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: on ? 0.30 : 0.08),
+          borderRadius: BorderRadius.circular(f(33)),
+          border: Border.all(
+              color: Colors.white.withValues(alpha: on ? 0.7 : 0.3),
+              width: f(2)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, style: Txt.inter(f(26), FontWeight.w600)),
+            ),
+            Text(on ? 'On' : 'Off',
+                style: Txt.inter(f(24), FontWeight.w500,
+                    color: Colors.white.withValues(alpha: on ? 1 : 0.6))),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _Pill extends StatelessWidget {

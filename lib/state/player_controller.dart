@@ -33,11 +33,17 @@ class PlayerController extends ChangeNotifier {
       speed = snap(_settings.lastSpeed, EqTuning.rateStops);
       pitch = snap(_settings.lastPitch, EqTuning.rateStops);
       gainDb = snap(_settings.lastGainDb, EqTuning.boostStops);
-      reverb = snap(_settings.lastReverb, FxTuning.stops);
-      echo = snap(_settings.lastEcho, FxTuning.stops);
+      reverb = _settings.lastReverb > 0 ? FxTuning.onLevel : 0;
+      echo = _settings.lastEcho > 0 ? FxTuning.onLevel : 0;
       ambient = _settings.lastAmbient;
     }
     _applyFx(instant: true);
+    // Loop mode is always remembered.
+    _player.setLoopMode(switch (_settings.loopMode) {
+      'all' => LoopMode.all,
+      'one' => LoopMode.one,
+      _ => LoopMode.off,
+    });
     eqEnabled = _settings.eqEnabled;
 
     _subs.add(_player.playerStateStream.listen((_) => notifyListeners()));
@@ -90,8 +96,10 @@ class PlayerController extends ChangeNotifier {
   double speed = 1.0;
   double pitch = 1.0;
   double gainDb = 0.0; // dB, one of EqTuning.boostStops
-  double reverb = 0.0; // 0..1, one of FxTuning.stops
-  double echo = 0.0; // 0..1, one of FxTuning.stops
+  double reverb = 0.0; // 0 (off) or FxTuning.onLevel (on)
+  double echo = 0.0; // 0 (off) or FxTuning.onLevel (on)
+  bool get reverbOn => reverb > 0;
+  bool get echoOn => echo > 0;
 
   /// Ambient (slowed + reverb) mode, see lib/debug/ambient_tuning.dart.
   bool ambient = false;
@@ -231,9 +239,12 @@ class PlayerController extends ChangeNotifier {
       eqMinDb = params.minDecibels;
       eqMaxDb = params.maxDecibels;
       _eqBands = params.bands;
+      // Flat unless the user has saved their own curve (some phones start
+      // the system equalizer on a preset).
       final saved = _settings.eqGains;
-      for (var i = 0; i < _eqBands.length && i < saved.length; i++) {
-        await _eqBands[i].setGain(saved[i].clamp(eqMinDb, eqMaxDb));
+      for (var i = 0; i < _eqBands.length; i++) {
+        final g = i < saved.length ? saved[i] : 0.0;
+        await _eqBands[i].setGain(g.clamp(eqMinDb, eqMaxDb));
       }
       eqFrequencies = [for (final b in _eqBands) b.centerFrequency];
       eqGains = [for (final b in _eqBands) b.gain];
@@ -289,7 +300,9 @@ class PlayerController extends ChangeNotifier {
   Future<void> cycleLoopMode() async {
     const order = [LoopMode.off, LoopMode.all, LoopMode.one];
     final i = order.indexOf(_player.loopMode);
-    await _player.setLoopMode(order[(i + 1) % order.length]);
+    final mode = order[(i + 1) % order.length];
+    await _player.setLoopMode(mode);
+    _settings.saveLoopMode(mode.name);
   }
 
   LoopMode get loopMode => _player.loopMode;
@@ -390,34 +403,27 @@ class PlayerController extends ChangeNotifier {
     }
   }
 
-  /// Leaving ambient by hand: keep its speed/pitch but drop its effects in
-  /// favour of the sliders.
-  void _leaveAmbientForManual() {
-    if (!ambient) return;
-    _ramp?.cancel();
-    ambient = false;
-    _beforeAmbient = null;
-  }
+  // While ambient is on it owns speed, pitch, reverb and echo; their
+  // controls are hidden and these setters do nothing.
 
-  void setReverb(double v) {
-    _leaveAmbientForManual();
-    reverb = snap(v, FxTuning.stops);
+  void setReverbOn(bool on) {
+    if (ambient) return;
+    reverb = on ? FxTuning.onLevel : 0;
     _applyFx();
     _persist();
     notifyListeners();
   }
 
-  void setEcho(double v) {
-    _leaveAmbientForManual();
-    echo = snap(v, FxTuning.stops);
+  void setEchoOn(bool on) {
+    if (ambient) return;
+    echo = on ? FxTuning.onLevel : 0;
     _applyFx();
     _persist();
     notifyListeners();
   }
 
   Future<void> setSpeed(double v) async {
-    _leaveAmbientForManual();
-    _applyFx();
+    if (ambient) return;
     speed = snap(v, EqTuning.rateStops);
     await _player.setSpeed(speed);
     _persist();
@@ -425,8 +431,7 @@ class PlayerController extends ChangeNotifier {
   }
 
   Future<void> setPitch(double v) async {
-    _leaveAmbientForManual();
-    _applyFx();
+    if (ambient) return;
     pitch = snap(v, EqTuning.rateStops);
     await _player.setPitch(pitch);
     _persist();
