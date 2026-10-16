@@ -32,10 +32,11 @@ class UiAssets {
   static const logoDark = 'assets/ui/logo_dark.png';
   static const ambient = 'assets/ui/ambient.png';
   static const ambientOn = 'assets/ui/ambient_on.png';
+  static const cdCase = 'assets/ui/cd_case.png';
 
   static const all = [
     play, pause, prev, next, minimize, equalizer, panel,
-    loop, shuffle, settings, search, logo, logoDark, ambient, ambientOn,
+    loop, shuffle, settings, search, logo, logoDark, ambient, ambientOn, cdCase,
   ];
 
   /// Decodes every UI image up front so nothing pops in on first use.

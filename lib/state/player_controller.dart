@@ -295,6 +295,16 @@ class PlayerController extends ChangeNotifier {
     }
   }
 
+  /// Whether a swipe on the album art has a song to go to.
+  bool get hasNextTrack => _player.hasNext;
+  bool get hasPreviousTrack => _player.hasPrevious;
+
+  /// Swiping right on the art: always the previous song (unlike the
+  /// previous button, which first restarts the current one).
+  Future<void> previousTrack() => _player.hasPrevious
+      ? _player.seekToPrevious()
+      : _player.seek(Duration.zero);
+
   Future<void> seek(Duration d) => _player.seek(d);
 
   Future<void> cycleLoopMode() async {

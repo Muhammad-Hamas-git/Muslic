@@ -8,6 +8,7 @@ import '../services/nav_sound.dart';
 import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
+import '../widgets/ambient_stars.dart';
 import '../widgets/muslic_app_bar.dart';
 import '../widgets/player_shell.dart';
 import '../widgets/song_carousel.dart';
@@ -97,12 +98,25 @@ class _LibraryScreenState extends State<LibraryScreen>
     final size = MediaQuery.sizeOf(context);
     final appBarBottom = MuslicAppBar.bottom(context);
     final miniTop = size.height - pad.bottom - f(54 + 186);
+    final topFade = pad.top + f(481 - MuslicAppBar.statusShift);
+    final bottomFade = pad.bottom + f(481);
+
+    // How opaque the edge fades are at height y (0..1), matching _Fade.
+    double fadeAlpha(double y, Size s) {
+      final top = ((topFade - y) / topFade / 0.635).clamp(0.0, 1.0);
+      final bottom =
+          ((y - (s.height - bottomFade)) / bottomFade / 0.635).clamp(0.0, 1.0);
+      return top > bottom ? top : bottom;
+    }
 
     return Scaffold(
       backgroundColor: Skin.of(context).background,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
+          // Ambient stars behind the carousel.
+          const Positioned.fill(child: AmbientStars()),
+
           // Carousel (or a status message).
           Positioned.fill(
             child: library.status == LibraryStatus.ready &&
@@ -127,16 +141,19 @@ class _LibraryScreenState extends State<LibraryScreen>
             left: 0,
             right: 0,
             top: 0,
-            height: pad.top + f(481 - MuslicAppBar.statusShift),
+            height: topFade,
             child: const IgnorePointer(child: _Fade(fromTop: true)),
           ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            height: pad.bottom + f(481),
+            height: bottomFade,
             child: const IgnorePointer(child: _Fade(fromTop: false)),
           ),
+          // The same stars again where the fades cover the ones above, so
+          // the sky reaches the screen edges but stays behind the covers.
+          Positioned.fill(child: AmbientStars(weight: fadeAlpha)),
 
           // Player: mini bar, expanding into the full card.
           if (hasPlayer)

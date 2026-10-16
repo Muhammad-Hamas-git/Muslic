@@ -133,6 +133,25 @@ class FakePlayer extends ChangeNotifier implements PlayerController {
   @override
   bool ambient = false;
   @override
+  bool get hasNextTrack => true;
+  @override
+  bool get hasPreviousTrack => true;
+  int skippedNext = 0;
+  int skippedBack = 0;
+  @override
+  Future<void> next() async {
+    skippedNext++;
+    current = _tracks[3];
+    notifyListeners();
+  }
+
+  @override
+  Future<void> previousTrack() async {
+    skippedBack++;
+    current = _tracks[1];
+    notifyListeners();
+  }
+  @override
   double reverb = 0.5;
   @override
   double echo = 0;
@@ -335,5 +354,44 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Equalizer'));
     await settle(tester);
     await shot(tester, '12_equalizer_ambient');
+  });
+
+  testWidgets('ambient stars on the library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), ambient: true);
+    await shot(tester, '13_library_ambient');
+  });
+
+  testWidgets('dragging the mini player up by hand follows the finger',
+      (tester) async {
+    await pumpApp(tester, const LibraryScreen());
+    expect(find.bySemanticsLabel('Minimize player'), findsNothing);
+    final g = await tester.startGesture(const Offset(120, 712));
+    for (var i = 0; i < 20; i++) {
+      await g.moveBy(const Offset(0, -18));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    // Still holding: the card must have followed the finger well past
+    // halfway (it used to stop after the first few pixels).
+    expect(find.bySemanticsLabel('Minimize player'), findsOneWidget);
+    await shot(tester, '14_dragged_by_hand');
+    await g.up();
+    await settle(tester);
+  });
+
+  testWidgets('swiping the art changes song', (tester) async {
+    late FakePlayer player;
+    await pumpApp(tester, Builder(builder: (context) {
+      player = context.read<PlayerController>() as FakePlayer;
+      return const LibraryScreen();
+    }), ambient: true);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await tester.flingFrom(const Offset(250, 330), const Offset(-200, 0), 1500);
+    await settle(tester);
+    expect(player.skippedNext, 1);
+    await tester.flingFrom(const Offset(110, 330), const Offset(200, 0), 1500);
+    await settle(tester);
+    expect(player.skippedBack, 1);
+    await shot(tester, '15_after_swipes');
   });
 }

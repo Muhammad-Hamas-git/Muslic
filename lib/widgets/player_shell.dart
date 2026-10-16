@@ -1,16 +1,20 @@
+import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:marquee/marquee.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/ambient_tuning.dart';
 import '../debug/blur_tuning.dart';
 import '../debug/ui_tuning.dart';
 import '../models/track.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
+import 'ambient_stars.dart';
 import 'art.dart';
 import 'blend_image.dart';
 import 'equalizer_panel.dart';
@@ -40,16 +44,134 @@ class PlayerShell extends StatefulWidget {
 }
 
 class _PlayerShellState extends State<PlayerShell>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _eq =
       AnimationController(vsync: this, duration: PlayerMotion.equalizer);
+
+  /// 0 = square album art, 1 = CD (ambient on). Tuning: [CdTuning].
+  late final AnimationController _cd =
+      AnimationController(vsync: this, duration: CdTuning.morph);
+
+  /// Horizontal offset of the art while it is swiped, in px.
+  late final AnimationController _swipe =
+      AnimationController.unbounded(vsync: this);
+
+  /// Disc rotation in radians, kept within -pi..pi.
+  final ValueNotifier<double> _angle = ValueNotifier(0);
+  late final Ticker _spin = createTicker(_onSpin);
+  Duration? _lastTick;
+  double _spinSpeed = 0; // rad/s
+  double? _uprightFrom; // angle when ambient turned off
+  double _uprightT = 0;
+  bool? _ambientOn;
+  bool _playingNow = false;
 
   AnimationController get _x => widget.expansion;
 
   @override
   void dispose() {
+    _spin.dispose();
     _eq.dispose();
+    _cd.dispose();
+    _swipe.dispose();
+    _angle.dispose();
     super.dispose();
+  }
+
+  /// Keeps the CD morph and the spin in step with ambient mode.
+  void _syncAmbient(bool ambient, bool playing) {
+    _playingNow = playing;
+    if (_ambientOn == ambient) return;
+    if (_ambientOn == null) {
+      _cd.value = ambient ? 1 : 0;
+    } else {
+      ambient
+          ? _cd.animateTo(1, curve: Curves.easeInOutCubic)
+          : _cd.animateTo(0, curve: Curves.easeInOutCubic);
+    }
+    _ambientOn = ambient;
+    _uprightFrom = null;
+    if (!_spin.isActive && (ambient || _angle.value != 0)) {
+      _lastTick = null;
+      _spin.start();
+    }
+  }
+
+  void _onSpin(Duration elapsed) {
+    final dt = _lastTick == null
+        ? 0.0
+        : (elapsed - _lastTick!).inMicroseconds / 1e6;
+    _lastTick = elapsed;
+    final ramp = CdTuning.spinRamp.inMilliseconds / 1000;
+
+    if (_ambientOn == true) {
+      final spin = !CdTuning.spinOnlyWhilePlaying || _playingNow;
+      final target = spin
+          ? 2 * math.pi / (CdTuning.spinPeriod.inMilliseconds / 1000)
+          : 0.0;
+      // Ease the speed towards the target (reaches ~95% after `ramp`).
+      _spinSpeed += (target - _spinSpeed) * (1 - math.exp(-dt * 3 / ramp));
+      var a = _angle.value + _spinSpeed * dt;
+      if (a > math.pi) a -= 2 * math.pi;
+      _angle.value = a;
+      return;
+    }
+
+    // Ambient off: turn back upright the short way, then stop.
+    _spinSpeed = 0;
+    _uprightFrom ??= _angle.value;
+    _uprightT = (_uprightT + dt / ramp).clamp(0.0, 1.0);
+    _angle.value =
+        _uprightFrom! * (1 - Curves.easeInOutCubic.transform(_uprightT));
+    if (_uprightT >= 1) {
+      _angle.value = 0;
+      _uprightFrom = null;
+      _uprightT = 0;
+      _spin.stop();
+    }
+  }
+
+  bool get _canSwipe => _x.value >= 0.999 && _eq.value <= 0.001;
+
+  void _swipeUpdate(DragUpdateDetails d) {
+    if (!_canSwipe) return;
+    final player = context.read<PlayerController>();
+    final delta = d.primaryDelta ?? 0;
+    final next = _swipe.value + delta;
+    final blocked = (next < 0 && !player.hasNextTrack) ||
+        (next > 0 && !player.hasPreviousTrack);
+    // Nothing to go to on that side: the art only gives a little.
+    _swipe.value = blocked ? _swipe.value + delta * 0.25 : next;
+  }
+
+  Future<void> _swipeEnd(DragEndDetails d, double width) async {
+    final player = context.read<PlayerController>();
+    final v = d.primaryVelocity ?? 0;
+    final dx = _swipe.value;
+    double dir = 0; // -1 = next (swiped left), 1 = previous
+    if (v.abs() > ArtSwipeTuning.flingVelocity) {
+      dir = v.sign;
+    } else if (dx.abs() > width * ArtSwipeTuning.distance) {
+      dir = dx.sign;
+    }
+    if (dir != 0 && dx != 0 && dir != dx.sign) dir = 0;
+    final ok = dir < 0
+        ? player.hasNextTrack
+        : dir > 0
+            ? player.hasPreviousTrack
+            : false;
+    if (!ok) {
+      _swipe.animateTo(0,
+          duration: ArtSwipeTuning.back, curve: Curves.easeOutBack);
+      return;
+    }
+    await _swipe.animateTo(dir * width,
+        duration: ArtSwipeTuning.out, curve: Curves.easeIn);
+    await (dir < 0 ? player.next() : player.previousTrack());
+    if (!mounted) return;
+    _swipe.value = -dir * width;
+    await _swipe.animateTo(0,
+        duration: ArtSwipeTuning.back, curve: Curves.easeOutCubic);
   }
 
   void _open() => PlayerShell.open(_x);
@@ -76,6 +198,7 @@ class _PlayerShellState extends State<PlayerShell>
     final player = context.watch<PlayerController>();
     final track = player.current;
     if (track == null) return const SizedBox.shrink();
+    _syncAmbient(player.ambient, player.playing);
 
     final f = Fg.of(context);
     final pad = MediaQuery.paddingOf(context);
@@ -93,7 +216,7 @@ class _PlayerShellState extends State<PlayerShell>
       final travel = collapsed.top - expanded.top;
 
       return AnimatedBuilder(
-        animation: Listenable.merge([_x, _eq]),
+        animation: Listenable.merge([_x, _eq, _cd, _swipe]),
         builder: (context, _) {
           final t = _x.value;
           final e = Curves.easeInOut.transform(_eq.value);
@@ -114,40 +237,86 @@ class _PlayerShellState extends State<PlayerShell>
           final collapsedFade = (1 - t / 0.4).clamp(0.0, 1.0);
           final expandedFade = ((t - 0.4) / 0.6).clamp(0.0, 1.0);
 
+          // CD look (ambient): only in the open player, so the mini bar
+          // keeps a square cover.
+          final cd = Curves.easeInOut.transform(_cd.value) * t;
+          final shrink = 1 - 0.06 * e; // art shrinks as the EQ opens
+          Rect scaled(Rect r) => Rect.fromCenter(
+              center: art.center + (r.center - art.center) * shrink,
+              width: r.width * shrink,
+              height: r.height * shrink);
+          final caseSide = art.width * CdTuning.caseScale;
+          final caseRect = Rect.fromCenter(
+              center: art.center, width: caseSide, height: caseSide);
+          final discSide = caseSide * CdTuning.discSize;
+          final discFull = Rect.fromCenter(
+              center: caseRect.topLeft +
+                  Offset(CdTuning.discCentreX * caseSide,
+                      CdTuning.discCentreY * caseSide),
+              width: discSide,
+              height: discSide);
+          final swipe = _swipe.value;
+          final disc =
+              scaled(Rect.lerp(art, discFull, cd)!).shift(Offset(swipe, 0));
+          final swipeFade =
+              (1 - swipe.abs() / expanded.width * 0.7).clamp(0.0, 1.0);
+          final artFade = (1 - e) * swipeFade;
+          final caseFade = cd * (1 - e) * CdTuning.caseOpacity;
+
           return PopScope(
             canPop: t == 0,
             onPopInvokedWithResult: (didPop, _) {
               if (didPop) return;
               _eq.value > 0 ? _eq.reverse() : _close();
             },
+            // Every child below stays in the tree (or has a key) for the
+            // whole animation. Adding the backdrop only once the card
+            // started moving used to shift the card to a new slot in this
+            // Stack mid-drag, which rebuilt its GestureDetector and dropped
+            // the drag: the "stuck" player when dragged up by hand.
             child: Stack(
               children: [
-                // White page behind the open card; blocks the library.
-                if (t > 0)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      ignoring: t < 0.05,
-                      child: ColoredBox(
-                          color: Skin.of(context)
-                              .background
-                              .withValues(alpha: t)),
-                    ),
+                // Page behind the open card (with the ambient stars);
+                // blocks the library.
+                Positioned.fill(
+                  key: const ValueKey('backdrop'),
+                  child: IgnorePointer(
+                    ignoring: t < 0.05,
+                    child: t <= 0
+                        ? const SizedBox.shrink()
+                        : Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ColoredBox(
+                                  color: Skin.of(context)
+                                      .background
+                                      .withValues(alpha: t)),
+                              AmbientStars(opacity: t),
+                            ],
+                          ),
                   ),
+                ),
                 Positioned.fromRect(
+                  key: const ValueKey('card'),
                   rect: card,
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: t < 0.01 ? _open : null,
+                    onTap: () {
+                      if (_x.value < 0.01) _open();
+                    },
+                    onVerticalDragStart: (_) => _x.stop(),
                     onVerticalDragUpdate: (d) =>
                         _x.value -= (d.primaryDelta ?? 0) / travel,
                     onVerticalDragEnd: (d) =>
                         _settle(d.primaryVelocity ?? 0, travel),
+                    onVerticalDragCancel: () => _settle(0, travel),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(f(85)),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
                           Positioned.fill(
+                            key: const ValueKey('blur'),
                             child: BlurredArt(
                               track: track,
                               zoom: lerpDouble(BlurTuning.collapsedZoom,
@@ -165,6 +334,7 @@ class _PlayerShellState extends State<PlayerShell>
                           ),
                           if (collapsedFade > 0)
                             Positioned(
+                              key: const ValueKey('collapsed'),
                               left: 0,
                               top: 0,
                               width: collapsed.width,
@@ -180,6 +350,7 @@ class _PlayerShellState extends State<PlayerShell>
                             ),
                           if (expandedFade > 0)
                             Positioned(
+                              key: const ValueKey('expanded'),
                               left: 0,
                               top: 0,
                               width: expanded.width,
@@ -197,20 +368,46 @@ class _PlayerShellState extends State<PlayerShell>
                                 ),
                               ),
                             ),
-                          if (e < 1)
+                          if (artFade > 0)
                             Positioned.fromRect(
-                              rect: art,
-                              child: Opacity(
-                                opacity: 1 - e,
-                                child: Transform.scale(
-                                  scale: 1 - 0.06 * e,
-                                  child: _Art(
+                              key: const ValueKey('art'),
+                              rect: disc,
+                              child: IgnorePointer(
+                                child: _plainFade(
+                                  artFade,
+                                  _Art(
                                     track: track,
                                     radius: lerpDouble(f(25), 0, t)!,
                                     shadow: 1 - t,
+                                    cd: cd,
+                                    angle: _angle,
                                     f: f,
                                   ),
                                 ),
+                              ),
+                            ),
+                          // CD case over the disc, screen blended (paint
+                          // alpha only, see above).
+                          if (caseFade > 0)
+                            Positioned.fromRect(
+                              key: const ValueKey('case'),
+                              rect: scaled(caseRect),
+                              child: IgnorePointer(
+                                child: BlendImage(UiAssets.cdCase,
+                                    opacity: caseFade),
+                              ),
+                            ),
+                          // Swipe the art left/right to change song.
+                          if (t >= 0.999 && e <= 0.001)
+                            Positioned.fromRect(
+                              key: const ValueKey('swipe'),
+                              rect: art,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onHorizontalDragStart: (_) => _swipe.stop(),
+                                onHorizontalDragUpdate: _swipeUpdate,
+                                onHorizontalDragEnd: (d) =>
+                                    _swipeEnd(d, expanded.width),
                               ),
                             ),
                         ],
@@ -281,37 +478,89 @@ class _ExpandedLayout {
   final Rect eqPanel;
 }
 
+/// The album art. [cd] (0..1) morphs it from a square into a CD: round,
+/// with a hole in the middle, turning by [angle].
 class _Art extends StatelessWidget {
-  const _Art(
-      {required this.track,
-      required this.radius,
-      required this.shadow,
-      required this.f});
+  const _Art({
+    required this.track,
+    required this.radius,
+    required this.shadow,
+    required this.cd,
+    required this.angle,
+    required this.f,
+  });
 
   final Track track;
   final double radius;
   final double shadow;
+  final double cd;
+  final ValueListenable<double> angle;
   final Fg f;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: shadow <= 0
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25 * shadow),
-                  offset: Offset(0, f(4)),
-                  blurRadius: f(75),
-                  spreadRadius: f(25) * shadow,
-                ),
-              ],
-      ),
-      child: TrackArt(track: track, decodeWidth: 900, radius: radius),
-    );
+    return LayoutBuilder(builder: (context, c) {
+      final side = c.biggest.shortestSide;
+      final corner = lerpDouble(radius, side / 2, cd)!;
+      final hole = side * CdTuning.holeSize / 2 * cd;
+      final image = TrackArt(track: track, decodeWidth: 900);
+
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(corner),
+          boxShadow: shadow <= 0
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25 * shadow),
+                    offset: Offset(0, f(4)),
+                    blurRadius: f(75),
+                    spreadRadius: f(25) * shadow,
+                  ),
+                ],
+        ),
+        // Its own layer, so the turning disc repaints alone each frame.
+        child: RepaintBoundary(
+          child: ClipPath(
+            clipper: _DiscClipper(corner: corner, hole: hole),
+            child: cd <= 0
+                ? image
+                : AnimatedBuilder(
+                    animation: angle,
+                    builder: (context, child) => Transform.rotate(
+                        angle: angle.value * cd, child: child),
+                    child: image,
+                  ),
+          ),
+        ),
+      );
+    });
   }
+}
+
+/// A rounded square (a circle when [corner] is half the side) with a round
+/// hole of radius [hole] in the middle.
+class _DiscClipper extends CustomClipper<Path> {
+  const _DiscClipper({required this.corner, required this.hole});
+  final double corner;
+  final double hole;
+
+  @override
+  Path getClip(Size size) {
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRRect(RRect.fromRectAndRadius(
+          Offset.zero & size, Radius.circular(corner)));
+    if (hole > 0.5) {
+      path.addOval(
+          Rect.fromCircle(center: size.center(Offset.zero), radius: hole));
+    }
+    return path;
+  }
+
+  @override
+  bool shouldReclip(_DiscClipper old) =>
+      old.corner != corner || old.hole != hole;
 }
 
 /// Wraps plain (non-blended) content in an Opacity. Safe for text and

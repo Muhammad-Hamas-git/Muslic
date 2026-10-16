@@ -9,6 +9,7 @@ import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
 import '../widgets/blend_image.dart';
+import '../widgets/ambient_stars.dart';
 import '../widgets/muslic_app_bar.dart';
 
 /// Settings: grouped cards in the app's monochrome style, with a wide-set
@@ -33,7 +34,9 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: skin.background,
-      body: Column(
+      body: Stack(children: [
+        const Positioned.fill(child: AmbientStars()),
+        Column(
         children: [
           MuslicAppBar(
             leading: AppBarGlyph(
@@ -214,6 +217,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+      ]),
     );
   }
 

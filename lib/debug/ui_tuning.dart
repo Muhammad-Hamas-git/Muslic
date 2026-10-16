@@ -96,3 +96,18 @@ class ScrollSoundTuning {
   /// (protects against a flood during very fast flings).
   static const Duration minGap = Duration(milliseconds: 28);
 }
+
+/// Swiping the album art left (next song) or right (previous song).
+class ArtSwipeTuning {
+  ArtSwipeTuning._();
+
+  /// How far to drag, as a fraction of the card width, to change song.
+  static const double distance = 0.22;
+
+  /// A flick faster than this (px/s) changes song even if short.
+  static const double flingVelocity = 700;
+
+  /// Art leaving, and the new art arriving (or springing back).
+  static const Duration out = Duration(milliseconds: 170);
+  static const Duration back = Duration(milliseconds: 320);
+}
