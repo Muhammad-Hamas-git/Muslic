@@ -1,0 +1,47 @@
+== Badging (universal APK)
+package: name='com.dotstudios.muslic' versionCode='21' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+minSdkVersion:'24'
+targetSdkVersion:'36'
+uses-permission: name='android.permission.READ_MEDIA_AUDIO'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='com.dotstudios.muslic.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+application-label:'müslic'
+launchable-activity: name='com.ryanheise.audioservice.AudioServiceActivity'  label='' icon=''
+
+== Notification icons kept by the resource shrinker (all 8 must be listed)
+drawable/audio_service_fast_forward
+drawable/audio_service_fast_rewind
+drawable/audio_service_pause
+drawable/audio_service_play_arrow
+drawable/audio_service_skip_next
+drawable/audio_service_skip_previous
+drawable/audio_service_stop
+drawable/ic_stat_muslic
+
+== APK signature
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+
+== AAB signature
+Owner: C=US, O=Android, CN=Android Debug
+	 SHA256: 04:8A:36:EA:22:96:8C:D5:49:3F:C6:BE:4A:0C:E7:D9:99:C5:92:85:FB:18:E7:EC:56:60:D5:48:0A:91:C3:2E
+
+== 16 KB page alignment (Play requirement for Android 15+)
+Verification successful
+
+== Sizes
+total 140480
+drwxr-xr-x  2 runner runner     4096 Oct 16 16:14 .
+drwxrwxrwt 16 root   root      12288 Oct 16 16:14 ..
+-rw-r--r--  1 runner runner 23057510 Oct 16 16:14 muslic-arm64.apk
+-rw-r--r--  1 runner runner 60848844 Oct 16 16:13 muslic-universal.apk
+-rw-r--r--  1 runner runner 59923596 Oct 16 16:13 muslic.aab
