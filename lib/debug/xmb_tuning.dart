@@ -54,19 +54,19 @@ class XmbTuning {
   // ---- Lighting --------------------------------------------------------
 
   /// Sheet opacity in light and dark mode.
-  static const double opacityLight = 0.80;
-  static const double opacityDark = 0.62;
+  static const double opacityLight = 1.0;
+  static const double opacityDark = 0.85;
 
   /// Faint fill where the sheet faces you (0..1).
-  static const double baseAlpha = 0.07;
+  static const double baseAlpha = 0.10;
 
   /// Brightness of edge-on parts and how tightly it hugs the folds
   /// (higher power = thinner, sharper bright lines).
-  static const double fresnel = 0.80;
-  static const double fresnelPower = 3.0;
+  static const double fresnel = 1.0;
+  static const double fresnelPower = 2.5;
 
   /// Extra brightness on the back side of a fold.
-  static const double backBoost = 0.10;
+  static const double backBoost = 0.14;
 
   /// Depth of the sheet relative to screen width. Smaller = more of the
   /// sheet looks edge-on (brighter overall).
