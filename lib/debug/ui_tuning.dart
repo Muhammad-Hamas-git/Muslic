@@ -25,6 +25,12 @@ class CarouselTuning {
 
   /// Time the carousel takes to glide to a song you tapped.
   static const Duration tapScroll = Duration(milliseconds: 380);
+
+  /// Glide to the last played song on launch: base time plus time per song
+  /// of distance, never longer than the max.
+  static const Duration restoreScrollBase = Duration(milliseconds: 450);
+  static const Duration restoreScrollPerSong = Duration(milliseconds: 45);
+  static const Duration restoreScrollMax = Duration(milliseconds: 1600);
 }
 
 class PlayerMotion {
@@ -117,9 +123,11 @@ class ArtSwipeTuning {
 class HapticTuning {
   HapticTuning._();
 
-  /// Strength, 1..255, or -1 for the phone's default strength. Only phones
-  /// with fine vibration control (most recent ones) use it.
-  static const int amplitude = 170;
+  /// Strength, 1..255 (255 = strongest), or -1 for the phone's default.
+  /// Separate from the length in Settings: length is how long each tick
+  /// lasts, this is how hard the motor pushes. Only phones with fine
+  /// vibration control (most recent ones) use it.
+  static const int amplitude = 255;
 
   /// Ticks closer together than this are skipped, so a fast fling feels
   /// like a smooth buzz instead of a rattle.

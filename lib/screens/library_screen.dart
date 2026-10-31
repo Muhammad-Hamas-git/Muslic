@@ -156,6 +156,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                       }
                       XmbInput.instance.songPassed();
                     },
+                    onScrollDelta: XmbInput.instance.scrolled,
                     focusTrackId: _focusTrackId,
                   )
                 : _Status(library: library, searching: _searching),

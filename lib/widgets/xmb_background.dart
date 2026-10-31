@@ -35,6 +35,13 @@ class XmbInput {
     }
   }
 
+  /// The carousel scrolled by [delta] px (positive = content moves up).
+  void scrolled(double delta) {
+    for (final t in _targets) {
+      t._sim.scroll(delta);
+    }
+  }
+
   /// A song passed in the carousel (also during flings).
   void songPassed() {
     for (final t in _targets) {
@@ -270,6 +277,21 @@ class _XmbSim {
 
   void touchUp(int pointer) => _fingers.remove(pointer);
 
+  /// Wave offset from scrolling, in px.
+  double scrollShift = 0;
+
+  void scroll(double delta) {
+    scrollShift += delta * XmbTuning.waveScroll;
+    final span = XmbTuning.maxSize - XmbTuning.minSize;
+    for (var i = 0; i < _n; i++) {
+      final depth = span <= 0 ? 0.5 : (_size[i] - XmbTuning.minSize) / span;
+      _y[i] -= delta *
+          (XmbTuning.particleScrollMin +
+              (XmbTuning.particleScrollMax - XmbTuning.particleScrollMin) *
+                  depth);
+    }
+  }
+
   void kick() {
     energy = math.min(XmbTuning.energyMax, energy + XmbTuning.energyPerSong);
   }
@@ -419,11 +441,13 @@ class _XmbPainter extends CustomPainter {
       Paint()
         ..shader = ui.Gradient.radial(const Offset(32, 32), 32, const [
           Color(0xFFFFFFFF),
-          Color(0x99FFFFFF),
+          Color(0xFFFFFFFF),
+          Color(0x66FFFFFF),
           Color(0x00FFFFFF),
         ], const [
           0.0,
-          0.25,
+          0.18,
+          0.4,
           1.0,
         ]),
     );
@@ -471,6 +495,8 @@ class _XmbPainter extends CustomPainter {
         (XmbTuning.opacityLight +
             (XmbTuning.opacityDark - XmbTuning.opacityLight) * night);
     final ys = h * 0.5; // dy/ds in px
+    // Scrolling slides the wave's folds along it (in s units).
+    final scroll = h <= 0 ? 0.0 : sim.scrollShift / ys;
     final depth = w * XmbTuning.depth;
     const waves = XmbTuning.waves;
 
@@ -490,7 +516,7 @@ class _XmbPainter extends CustomPainter {
         var xz = XmbTuning.spread + XmbTuning.spreadLean * s;
         for (final k in waves) {
           final a = k.amp * grow;
-          final arg = k.along * s + k.twist * z + k.speed * t + k.phase;
+          final arg = k.along * (s + scroll) + k.twist * z + k.speed * t + k.phase;
           x += a * math.sin(arg);
           final cs = math.cos(arg);
           xs += a * k.along * cs;

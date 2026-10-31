@@ -28,7 +28,13 @@ class SongCarousel extends StatefulWidget {
     required this.onSelect,
     this.focusTrackId,
     this.onSongPassed,
+    this.onScrollDelta,
   });
+
+  /// Called with every scroll movement in px (positive = towards later
+  /// songs), including flings and the restore scroll. Drives the XMB
+  /// background's parallax.
+  final ValueChanged<double>? onScrollDelta;
 
   /// Called each time scrolling brings a different song to the centre
   /// (used for the scroll click). Not called for programmatic jumps.
@@ -36,8 +42,8 @@ class SongCarousel extends StatefulWidget {
 
   final List<Track> tracks;
 
-  /// When this changes to a song in [tracks], the carousel jumps to it
-  /// (used to show the restored last song on launch).
+  /// When this changes to a song in [tracks], the carousel scrolls smoothly
+  /// to it (used to show the restored last song on launch).
   final int? focusTrackId;
 
   /// Screen y of the app bar bottom and the mini player top. The centred
@@ -83,13 +89,26 @@ class _SongCarouselState extends State<SongCarousel> {
   }
 
   void _jumpToFocus() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final i = widget.tracks.indexWhere((t) => t.id == widget.focusTrackId);
       if (i < 0 || !mounted || !_scroll.hasClients) return;
+      // Glide there instead of snapping; longer for songs further away,
+      // capped so a big library does not take ages. No clicks on the way.
+      final from = _page;
+      final distance = (i - from).abs();
+      if (distance < 0.01) return;
+      final ms = (CarouselTuning.restoreScrollBase.inMilliseconds +
+              CarouselTuning.restoreScrollPerSong.inMilliseconds * distance)
+          .clamp(0, CarouselTuning.restoreScrollMax.inMilliseconds)
+          .round();
       _silent = true;
-      _scroll.jumpTo(i * _step);
-      _centered.value = i;
-      _silent = false;
+      try {
+        await _scroll.animateTo(i * _step,
+            duration: Duration(milliseconds: ms),
+            curve: Curves.easeInOutCubic);
+      } finally {
+        _silent = false;
+      }
     });
   }
 
@@ -104,7 +123,16 @@ class _SongCarouselState extends State<SongCarousel> {
 
   bool _silent = false;
 
+  double? _lastOffset;
+
   void _onScroll() {
+    if (_scroll.hasClients) {
+      final o = _scroll.offset;
+      if (_lastOffset != null && o != _lastOffset) {
+        widget.onScrollDelta?.call(o - _lastOffset!);
+      }
+      _lastOffset = o;
+    }
     final n = widget.tracks.length;
     if (n == 0) return;
     final i = _page.round().clamp(0, n - 1);

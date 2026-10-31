@@ -98,6 +98,12 @@ class XmbTuning {
   static const double energyAmpBoost = 0.45;
   static const Duration energyDecay = Duration(milliseconds: 1200);
 
+  // ---- Player ----------------------------------------------------------
+
+  /// Opacity of the blurred album art behind the mini player and the open
+  /// player in XMB (the controls and text stay fully solid).
+  static const double playerBackgroundOpacity = 0.75;
+
   // ---- Particles -------------------------------------------------------
 
   /// Number of sparkles.
@@ -109,13 +115,13 @@ class XmbTuning {
 
   /// Sparkle radius range in screen points; above 1 makes small ones more
   /// common.
-  static const double minSize = 1.0;
-  static const double maxSize = 3.2;
+  static const double minSize = 0.7;
+  static const double maxSize = 2.3;
   static const double sizeBias = 3.0;
 
   /// Brightness in light and dark mode.
-  static const double particleOpacityLight = 0.85;
-  static const double particleOpacityDark = 0.75;
+  static const double particleOpacityLight = 1.0;
+  static const double particleOpacityDark = 0.95;
 
   /// Drift speed upwards along the wave, points per second.
   static const double drift = 16;
@@ -132,6 +138,14 @@ class XmbTuning {
   /// Scrolling blows sparkles along with the finger: share of the finger's
   /// speed passed on.
   static const double wind = 0.35;
+
+  /// Scrolling the library moves the background along with it, slower
+  /// than the covers for depth: the wave moves at [waveScroll] of the
+  /// scroll speed, sparkles between [particleScrollMin] (smallest, far
+  /// away) and [particleScrollMax] (biggest, closest).
+  static const double waveScroll = 0.18;
+  static const double particleScrollMin = 0.30;
+  static const double particleScrollMax = 0.75;
 
   /// How quickly pushed sparkles slow back down to their drift (per second).
   static const double particleDamping = 2.2;

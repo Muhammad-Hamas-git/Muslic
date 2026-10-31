@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../debug/ambient_tuning.dart';
 import '../debug/blur_tuning.dart';
 import '../debug/ui_tuning.dart';
+import '../debug/xmb_tuning.dart';
 import '../models/track.dart';
 import '../state/player_controller.dart';
 import '../ui/design.dart';
@@ -319,7 +320,14 @@ class _PlayerShellState extends State<PlayerShell>
                         children: [
                           Positioned.fill(
                             key: const ValueKey('blur'),
-                            child: BlurredArt(
+                            // XMB: the blurred art is see-through so the
+                            // wave shows behind the card. Only the art is
+                            // faded; buttons and text stay solid.
+                            child: _plainFade(
+                              1 -
+                                  (1 - XmbTuning.playerBackgroundOpacity) *
+                                      Skin.of(context).xmb,
+                              BlurredArt(
                               track: track,
                               zoom: lerpDouble(BlurTuning.collapsedZoom,
                                   BlurTuning.expandedZoom, t)!,
@@ -333,6 +341,7 @@ class _PlayerShellState extends State<PlayerShell>
                                               t)!) *
                                       (1 - Skin.of(context).blurDim),
                             ),
+                          ),
                           ),
                           if (collapsedFade > 0)
                             Positioned(
