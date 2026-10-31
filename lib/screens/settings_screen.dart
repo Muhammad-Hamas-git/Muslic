@@ -8,7 +8,9 @@ import '../state/library_controller.dart';
 import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
+import '../services/haptics.dart';
 import '../widgets/blend_image.dart';
+import '../widgets/xmb_background.dart';
 import '../widgets/ambient_stars.dart';
 import '../widgets/muslic_app_bar.dart';
 
@@ -34,7 +36,10 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: skin.background,
-      body: Stack(children: [
+      body: XmbTouch(
+        child: Stack(children: [
+        if (skin.xmb > 0)
+          Positioned.fill(child: XmbBackground(opacity: skin.xmb)),
         const Positioned.fill(child: AmbientStars()),
         Column(
         children: [
@@ -57,6 +62,20 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 _Group(label: 'Appearance', children: [
                   _Row(
+                    title: 'Style',
+                    subtitle: settings.style == AppStyle.xmb
+                        ? 'Moving wave and sparkles behind everything'
+                        : 'Plain background',
+                    trailing: _Segmented<AppStyle>(
+                      value: settings.style,
+                      options: const [
+                        (AppStyle.classic, 'Classic'),
+                        (AppStyle.xmb, 'XMB'),
+                      ],
+                      onChanged: settings.setStyle,
+                    ),
+                  ),
+                  _Row(
                     title: 'Theme',
                     trailing: _Segmented<AppTheme>(
                       value: settings.theme,
@@ -73,6 +92,24 @@ class SettingsScreen extends StatelessWidget {
                     value: settings.scrollSound,
                     onChanged: settings.setScrollSound,
                   ),
+                  _SwitchRow(
+                    title: 'Scroll vibration',
+                    subtitle: 'A light tick as songs pass in the carousel',
+                    value: settings.scrollHaptics,
+                    onChanged: (v) {
+                      settings.setScrollHaptics(v);
+                      if (v) Haptics.tick(settings.hapticMs, force: true);
+                    },
+                  ),
+                  if (settings.scrollHaptics)
+                    _Row(
+                      title: 'Vibration length',
+                      value: '${settings.hapticMs} ms',
+                      below: _LengthSlider(
+                        value: settings.hapticMs,
+                        onChanged: settings.setHapticMs,
+                      ),
+                    ),
                 ]),
                 _Group(label: 'Library', children: [
                   _Row(
@@ -218,6 +255,7 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
       ]),
+      ),
     );
   }
 
@@ -831,6 +869,44 @@ class _NotificationRowState extends State<_NotificationRow>
           : 'Off. Tap to allow notifications.',
       value: granted ? 'On' : null,
       onTap: granted ? null : _fix,
+    );
+  }
+}
+
+
+/// Slider for the vibration length. Ticks once at each new value so the
+/// length can be felt while choosing it.
+class _LengthSlider extends StatelessWidget {
+  const _LengthSlider({required this.value, required this.onChanged});
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final skin = Skin.of(context);
+    return SliderTheme(
+      data: SliderThemeData(
+        trackHeight: 3,
+        activeTrackColor: skin.ink,
+        inactiveTrackColor: skin.ink.withValues(alpha: 0.15),
+        thumbColor: skin.ink,
+        overlayColor: skin.ink.withValues(alpha: 0.08),
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+        showValueIndicator: ShowValueIndicator.never,
+      ),
+      child: Slider(
+        min: SettingsController.hapticMinMs.toDouble(),
+        max: SettingsController.hapticMaxMs.toDouble(),
+        divisions: SettingsController.hapticMaxMs - SettingsController.hapticMinMs,
+        value: value.toDouble(),
+        onChanged: (v) {
+          final ms = v.round();
+          if (ms != value) {
+            onChanged(ms);
+            Haptics.tick(ms, force: true);
+          }
+        },
+      ),
     );
   }
 }

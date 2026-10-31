@@ -25,7 +25,7 @@ public class JustAudioPlugin implements FlutterPlugin {
         methodCallHandler = new MainMethodCallHandler(applicationContext, messenger);
 
         channel = new MethodChannel(messenger, "com.ryanheise.just_audio.methods");
-        MuslicFx.register(messenger); // müslic: reverb/echo controls
+        MuslicFx.register(messenger, applicationContext); // müslic: reverb/echo, haptics
         channel.setMethodCallHandler(methodCallHandler);
         @SuppressWarnings("deprecation")
         FlutterEngine engine = binding.getFlutterEngine();

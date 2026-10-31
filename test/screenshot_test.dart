@@ -17,11 +17,13 @@ import 'package:muslic/screens/library_screen.dart';
 import 'package:muslic/screens/settings_screen.dart';
 import 'package:muslic/ui/skin.dart';
 import 'package:muslic/services/artwork_cache.dart';
+import 'package:muslic/services/haptics.dart';
 import 'package:muslic/services/nav_sound.dart';
 import 'package:muslic/state/library_controller.dart';
 import 'package:muslic/state/player_controller.dart';
 import 'package:muslic/state/settings_controller.dart';
 import 'package:muslic/widgets/equalizer_panel.dart';
+import 'package:muslic/widgets/xmb_background.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -186,6 +188,8 @@ void main() {
 
   setUpAll(() async {
     NavSound.enabled = false;
+    Haptics.enabled = false;
+    XmbBackground.animate = false;
     await _loadFonts();
     SharedPreferences.setMockInitialValues({});
     final messenger =
@@ -202,7 +206,9 @@ void main() {
   });
 
   Future<void> pumpApp(WidgetTester tester, Widget home,
-      {AppTheme theme = AppTheme.light, bool ambient = false}) async {
+      {AppTheme theme = AppTheme.light,
+      AppStyle style = AppStyle.classic,
+      bool ambient = false}) async {
     debugDisableShadows = false; // reset in shot()
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3.0;
@@ -225,7 +231,9 @@ void main() {
       providers: [
         Provider.value(value: cache),
         ChangeNotifierProvider(
-            create: (_) => SettingsController(prefs)..theme = theme),
+            create: (_) => SettingsController(prefs)
+              ..theme = theme
+              ..style = style),
         ChangeNotifierProvider<LibraryController>(create: (_) => FakeLibrary()),
         ChangeNotifierProvider<PlayerController>(
             create: (_) => FakePlayer()..ambient = ambient),
@@ -393,5 +401,49 @@ void main() {
     await settle(tester);
     expect(player.skippedBack, 1);
     await shot(tester, '15_after_swipes');
+  });
+
+  testWidgets('XMB light library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.xmb);
+    await shot(tester, '16_xmb_library');
+  });
+
+  testWidgets('XMB light player', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.xmb);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await shot(tester, '17_xmb_player');
+  });
+
+  testWidgets('XMB dark library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(),
+        style: AppStyle.xmb, theme: AppTheme.dark);
+    await shot(tester, '18_xmb_dark_library');
+  });
+
+  testWidgets('XMB dark player', (tester) async {
+    await pumpApp(tester, const LibraryScreen(),
+        style: AppStyle.xmb, theme: AppTheme.dark);
+    await tester.tapAt(const Offset(110, 700));
+    await settle(tester);
+    await shot(tester, '19_xmb_dark_player');
+  });
+
+  testWidgets('XMB settings', (tester) async {
+    await pumpApp(tester, const SettingsScreen(), style: AppStyle.xmb);
+    await shot(tester, '20_xmb_settings');
+  });
+
+  testWidgets('XMB wave reacts to a touch', (tester) async {
+    XmbBackground.animate = true;
+    addTearDown(() => XmbBackground.animate = false);
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.xmb);
+    final g = await tester.startGesture(const Offset(70, 420));
+    for (var i = 0; i < 6; i++) {
+      await g.moveBy(const Offset(0, 12));
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+    await shot(tester, '21_xmb_touch');
+    await g.up();
   });
 }

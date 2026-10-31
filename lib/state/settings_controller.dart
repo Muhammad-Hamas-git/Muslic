@@ -3,8 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum LibrarySort { artist, name, dateModified }
 
-/// App themes. Add new ones here and in lib/ui/skin.dart.
+/// Light or dark mode. Add new ones here and in lib/ui/skin.dart.
 enum AppTheme { light, dark }
+
+/// Look of the app: the plain Classic look, or XMB (animated wave and
+/// particles behind everything, like the PlayStation 3 menu). Each works
+/// with [AppTheme] light and dark.
+enum AppStyle { classic, xmb }
 
 /// All user-tunable settings, persisted to SharedPreferences.
 ///
@@ -33,7 +38,10 @@ class SettingsController extends ChangeNotifier {
   bool sortAscending = true;
   bool tidyTitles = true; // shorten "Artist - Song (Official Video)" style names
   AppTheme theme = AppTheme.light;
+  AppStyle style = AppStyle.classic;
   bool scrollSound = true; // click when the carousel passes a song
+  bool scrollHaptics = true; // tick of vibration as songs pass
+  int hapticMs = 12; // length of that tick, in milliseconds
 
   // ---- Playback ----
   bool resumeOnHeadphones = false;
@@ -66,7 +74,11 @@ class SettingsController extends ChangeNotifier {
     tidyTitles = _prefs.getBool('tidyTitles') ?? true;
     theme = AppTheme.values.asNameMap()[_prefs.getString('theme')] ??
         AppTheme.light;
+    style = AppStyle.values.asNameMap()[_prefs.getString('style')] ??
+        AppStyle.classic;
     scrollSound = _prefs.getBool('scrollSound') ?? true;
+    scrollHaptics = _prefs.getBool('scrollHaptics') ?? true;
+    hapticMs = (_prefs.getInt('hapticMs') ?? 12).clamp(hapticMinMs, hapticMaxMs);
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
@@ -95,7 +107,10 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setBool('sortAscendingV2', sortAscending);
     await _prefs.setBool('tidyTitles', tidyTitles);
     await _prefs.setString('theme', theme.name);
+    await _prefs.setString('style', style.name);
     await _prefs.setBool('scrollSound', scrollSound);
+    await _prefs.setBool('scrollHaptics', scrollHaptics);
+    await _prefs.setInt('hapticMs', hapticMs);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
@@ -168,6 +183,25 @@ class SettingsController extends ChangeNotifier {
 
   void setScrollSound(bool v) {
     scrollSound = v;
+    _commit();
+  }
+
+  void setStyle(AppStyle v) {
+    style = v;
+    _commit();
+  }
+
+  void setScrollHaptics(bool v) {
+    scrollHaptics = v;
+    _commit();
+  }
+
+  /// Range of the "Vibration length" slider in Settings.
+  static const int hapticMinMs = 4;
+  static const int hapticMaxMs = 40;
+
+  void setHapticMs(int ms) {
+    hapticMs = ms.clamp(hapticMinMs, hapticMaxMs);
     _commit();
   }
 

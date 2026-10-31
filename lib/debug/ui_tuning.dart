@@ -111,3 +111,17 @@ class ArtSwipeTuning {
   static const Duration out = Duration(milliseconds: 170);
   static const Duration back = Duration(milliseconds: 320);
 }
+
+/// The vibration tick as carousel songs pass. On/off and its length are in
+/// Settings > Appearance; these are the extras.
+class HapticTuning {
+  HapticTuning._();
+
+  /// Strength, 1..255, or -1 for the phone's default strength. Only phones
+  /// with fine vibration control (most recent ones) use it.
+  static const int amplitude = 170;
+
+  /// Ticks closer together than this are skipped, so a fast fling feels
+  /// like a smooth buzz instead of a rattle.
+  static const Duration minGap = Duration(milliseconds: 35);
+}

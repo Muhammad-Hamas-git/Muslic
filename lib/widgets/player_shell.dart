@@ -285,13 +285,14 @@ class _PlayerShellState extends State<PlayerShell>
                     ignoring: t < 0.05,
                     child: t <= 0
                         ? const SizedBox.shrink()
+                        // XMB keeps its animated background visible
+                        // (the library fades its carousel out instead).
                         : Stack(
                             fit: StackFit.expand,
                             children: [
                               ColoredBox(
-                                  color: Skin.of(context)
-                                      .background
-                                      .withValues(alpha: t)),
+                                  color: Skin.of(context).background.withValues(
+                                      alpha: t * (1 - Skin.of(context).xmb))),
                               AmbientStars(opacity: t),
                             ],
                           ),

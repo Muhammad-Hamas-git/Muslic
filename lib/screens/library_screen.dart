@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../debug/ui_tuning.dart';
 import '../state/library_controller.dart';
 import '../state/player_controller.dart';
+import '../services/haptics.dart';
 import '../services/nav_sound.dart';
 import '../state/settings_controller.dart';
 import '../ui/design.dart';
@@ -12,6 +13,7 @@ import '../widgets/ambient_stars.dart';
 import '../widgets/muslic_app_bar.dart';
 import '../widgets/player_shell.dart';
 import '../widgets/song_carousel.dart';
+import '../widgets/xmb_background.dart';
 import 'settings_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -109,17 +111,37 @@ class _LibraryScreenState extends State<LibraryScreen>
       return top > bottom ? top : bottom;
     }
 
+    final skin = Skin.of(context);
+
     return Scaffold(
-      backgroundColor: Skin.of(context).background,
+      backgroundColor: skin.background,
       resizeToAvoidBottomInset: false,
-      body: Stack(
+      // Every touch also reaches the XMB background (it never blocks taps).
+      body: XmbTouch(
+        child: Stack(
         children: [
+          // XMB theme: animated wave and sparkles behind everything.
+          if (skin.xmb > 0)
+            Positioned.fill(child: XmbBackground(opacity: skin.xmb)),
+
           // Ambient stars behind the carousel.
           const Positioned.fill(child: AmbientStars()),
 
-          // Carousel (or a status message).
+          // Carousel (or a status message). In XMB there is no solid page
+          // behind the open player, so the carousel fades out instead.
           Positioned.fill(
-            child: library.status == LibraryStatus.ready &&
+            child: AnimatedBuilder(
+              animation: _expansion,
+              builder: (context, child) {
+                final hide = _expansion.value * skin.xmb;
+                if (hide <= 0) return child!;
+                return IgnorePointer(
+                  ignoring: hide > 0.5,
+                  child: Opacity(
+                      opacity: (1 - hide).clamp(0.0, 1.0), child: child),
+                );
+              },
+              child: library.status == LibraryStatus.ready &&
                     library.tracks.isNotEmpty
                 ? SongCarousel(
                     tracks: library.tracks,
@@ -127,13 +149,17 @@ class _LibraryScreenState extends State<LibraryScreen>
                     bottomBound: miniTop,
                     onSelect: _onSelect,
                     onSongPassed: () {
-                      if (context.read<SettingsController>().scrollSound) {
-                        NavSound.instance.click();
+                      final settings = context.read<SettingsController>();
+                      if (settings.scrollSound) NavSound.instance.click();
+                      if (settings.scrollHaptics) {
+                        Haptics.tick(settings.hapticMs);
                       }
+                      XmbInput.instance.songPassed();
                     },
                     focusTrackId: _focusTrackId,
                   )
                 : _Status(library: library, searching: _searching),
+            ),
           ),
 
           // White fades at the top and bottom (Figma Gradient1/Gradient2).
@@ -226,6 +252,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -238,13 +265,19 @@ class _Fade extends StatelessWidget {
   Widget build(BuildContext context) {
     // Figma: transparent to white, reaching solid white at 63.5%.
     // (Black in the dark theme.)
-    final bg = Skin.of(context).background;
+    // None in XMB, where the background shows through.
+    final skin = Skin.of(context);
+    if (skin.edgeFade <= 0) return const SizedBox.shrink();
+    final bg = skin.background;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: fromTop ? Alignment.bottomCenter : Alignment.topCenter,
           end: fromTop ? Alignment.topCenter : Alignment.bottomCenter,
-          colors: [bg.withValues(alpha: 0), bg],
+          colors: [
+            bg.withValues(alpha: 0),
+            bg.withValues(alpha: skin.edgeFade),
+          ],
           stops: const [0.0, 0.635],
         ),
       ),
