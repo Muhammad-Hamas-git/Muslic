@@ -235,7 +235,8 @@ class _GroupTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: ColoredBox(
+        // A Material (not a ColoredBox) so the tile's ink shows.
+        child: Material(
           color: skin.surface,
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
