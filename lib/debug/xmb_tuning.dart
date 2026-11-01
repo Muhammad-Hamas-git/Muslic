@@ -13,9 +13,9 @@ class XmbTuning {
 
   /// Light mode: deep navy to bright blue.
   static List<Color> lightGradient = [
-    Color(0xFF06126E),
-    Color(0xFF1537C6),
-    Color(0xFF2F6EF7),
+    Color(0xFF06316E),
+    Color(0xFF158BC6),
+    Color(0xFF004EF7),
   ];
 
   /// Dark mode: black to very dark grey.
@@ -36,7 +36,7 @@ class XmbTuning {
   static double lean = 0.13;
 
   /// Width of the sheet (half width), and how much wider it gets lower down.
-  static double spread = 0.15;
+  static double spread = 0.101;
   static double spreadLean = 0.05;
 
   /// The three rolling waves that bend the sheet: amplitude (fraction of
@@ -105,13 +105,13 @@ class XmbTuning {
 
   /// Sparkle radius range in screen points; above 1 makes small ones more
   /// common.
-  static double minSize = 0.7;
-  static double maxSize = 2.3;
+  static double minSize = 0.39;
+  static double maxSize = 1.66;
   static double sizeBias = 3.0;
 
   /// Brightness in light and dark mode.
   static double particleOpacityLight = 1.0;
-  static double particleOpacityDark = 0.95;
+  static double particleOpacityDark = 1.0;
 
   /// Drift speed upwards along the wave, points per second.
   static double drift = 16;

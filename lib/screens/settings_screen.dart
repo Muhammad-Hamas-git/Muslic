@@ -953,7 +953,7 @@ class _FooterState extends State<_Footer> {
               padding: const EdgeInsets.all(8),
               child: Image.asset(
                 skin.dark ? UiAssets.dotLogoDark : UiAssets.dotLogo,
-                height: 34,
+                height: 48,
                 filterQuality: FilterQuality.medium,
                 semanticLabel: 'dot Studios',
               ),

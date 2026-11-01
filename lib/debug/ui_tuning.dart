@@ -78,7 +78,7 @@ class ButtonTuning {
   ButtonTuning._();
 
   /// Size while pressed (1.0 = no change).
-  static double pressedScale = 0.86;
+  static double pressedScale = 0.6;
 
   /// How fast the button dips when pressed.
   static Duration pressIn = Duration(milliseconds: 90);
@@ -97,7 +97,7 @@ class ScrollSoundTuning {
   ScrollSoundTuning._();
 
   /// Volume, 0..1 (relative to the media volume).
-  static double volume = 0.275;
+  static double volume = 0.45;
 
   /// How many clicks can sound at once. Fast scrolls layer clicks over each
   /// other; once all voices are busy the oldest one restarts.

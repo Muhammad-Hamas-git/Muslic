@@ -10,11 +10,11 @@ class AmbientTuning {
   // ---- Speed and pitch -------------------------------------------------
 
   /// Playback speed while ambient is on (1.0 = normal).
-  static double speed = 0.8;
+  static double speed = 0.85;
 
   /// Pitch while ambient is on (1.0 = normal). Same as [speed] gives the
   /// classic "slowed" sound of playing a record too slow.
-  static double pitch = 0.8;
+  static double pitch = 0.85;
 
   /// How long the slow-down glides when ambient turns on or off.
   /// 0 = instant. Around 1500 ms sounds like a record winding down.
@@ -53,11 +53,11 @@ class AmbientTuning {
   // ---- Echo (delay) ---------------------------------------------------
 
   /// Echo level, 0..1. Keep it subtle; reverb does most of the work.
-  /// Stay at or below the Echo toggle's "On" level (0.225, i.e. 50%).
-  static double echoWet = 0.12;
+  /// The Echo toggle's "On" level is 0.45 (50% of 0.9) for comparison.
+  static double echoWet = 0.255;
 
   /// Time between repeats, in ms (1..2000). 300 to 450 suits slowed songs.
-  static double echoMs = 420;
+  static double echoMs = 680;
 
   /// How much each repeat feeds the next, 0..0.95. Higher = more repeats.
   static double echoFeedback = 0.32;
@@ -84,9 +84,9 @@ class FxTuning {
   static double preDelayMs = 25;
 
   // Echo at full (100%). On = onLevel x this.
-  static double echoWetMax = 0.45;
-  static double echoMs = 360;
-  static double echoFeedback = 0.38;
+  static double echoWetMax = 0.9;
+  static double echoMs = 835;
+  static double echoFeedback = 0.35;
   static double echoToneHz = 3500;
 
   /// The original signal is lowered as reverb/echo go up, so the sliders
@@ -144,23 +144,23 @@ class StarTuning {
 
   /// Smallest and largest star radius, in screen points.
   static double minRadius = 0.6;
-  static double maxRadius = 2.1;
+  static double maxRadius = 1.8;
 
   /// Above 1 makes small stars more common than big ones.
-  static double sizeBias = 2.4;
+  static double sizeBias = 4.31;
 
   /// Brightest a star gets (0..1).
-  static double maxOpacity = 0.9;
+  static double maxOpacity = 1.0;
 
   /// Each star fades on and off over a random time in this range.
-  static Duration minTwinkle = Duration(milliseconds: 2800);
-  static Duration maxTwinkle = Duration(milliseconds: 8000);
+  static Duration minTwinkle = Duration(milliseconds: 1026);
+  static Duration maxTwinkle = Duration(milliseconds: 3863);
 
   /// Above 1 keeps stars dark for longer between flickers.
   static double offBias = 1.6;
 
   /// Soft glow around the bigger stars, 0 = none.
-  static double glow = 0.6;
+  static double glow = 2.0;
 
   /// Change for a different sky.
   static const int seed = 11;
