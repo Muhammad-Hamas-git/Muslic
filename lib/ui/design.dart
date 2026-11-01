@@ -33,6 +33,9 @@ class UiAssets {
   static const ambient = 'assets/ui/ambient.png';
   static const ambientOn = 'assets/ui/ambient_on.png';
   static const cdCase = 'assets/ui/cd_case.png';
+  // dot Studios logo in the Settings footer (black and white versions).
+  static const dotLogo = 'assets/ui/dot_logo.png';
+  static const dotLogoDark = 'assets/ui/dot_logo_dark.png';
 
   static const all = [
     play, pause, prev, next, minimize, equalizer, panel,

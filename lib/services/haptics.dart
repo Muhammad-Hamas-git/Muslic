@@ -16,15 +16,15 @@ class Haptics {
 
   static DateTime _last = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// One tick of [ms] milliseconds. [force] skips the rate limit (used to
-  /// preview the length in Settings).
-  static void tick(int ms, {bool force = false}) {
+  /// One tick, [ms] long (default [HapticTuning.lengthMs]). [force] skips
+  /// the rate limit (used when previewing).
+  static void tick({int? ms, bool force = false}) {
     if (!enabled) return;
     final now = DateTime.now();
     if (!force && now.difference(_last) < HapticTuning.minGap) return;
     _last = now;
     _channel.invokeMethod('haptic', {
-      'ms': ms,
+      'ms': ms ?? HapticTuning.lengthMs,
       'amplitude': HapticTuning.amplitude,
     }).catchError((Object e) {
       debugPrint('müslic: haptic failed: $e');

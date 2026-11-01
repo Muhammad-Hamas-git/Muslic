@@ -41,7 +41,7 @@ class SettingsController extends ChangeNotifier {
   AppStyle style = AppStyle.classic;
   bool scrollSound = true; // click when the carousel passes a song
   bool scrollHaptics = true; // tick of vibration as songs pass
-  int hapticMs = 12; // length of that tick, in milliseconds
+  // (its length and strength are in lib/debug/ui_tuning.dart HapticTuning)
 
   // ---- Playback ----
   bool resumeOnHeadphones = false;
@@ -78,7 +78,6 @@ class SettingsController extends ChangeNotifier {
         AppStyle.classic;
     scrollSound = _prefs.getBool('scrollSound') ?? true;
     scrollHaptics = _prefs.getBool('scrollHaptics') ?? true;
-    hapticMs = (_prefs.getInt('hapticMs') ?? 12).clamp(hapticMinMs, hapticMaxMs);
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
@@ -110,7 +109,6 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setString('style', style.name);
     await _prefs.setBool('scrollSound', scrollSound);
     await _prefs.setBool('scrollHaptics', scrollHaptics);
-    await _prefs.setInt('hapticMs', hapticMs);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
@@ -196,14 +194,6 @@ class SettingsController extends ChangeNotifier {
     _commit();
   }
 
-  /// Range of the "Vibration length" slider in Settings.
-  static const int hapticMinMs = 4;
-  static const int hapticMaxMs = 40;
-
-  void setHapticMs(int ms) {
-    hapticMs = ms.clamp(hapticMinMs, hapticMaxMs);
-    _commit();
-  }
 
   void setTidyTitles(bool v) {
     tidyTitles = v;

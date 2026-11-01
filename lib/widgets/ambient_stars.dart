@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../debug/ambient_tuning.dart';
+import '../debug/dev_values.dart';
 import '../state/player_controller.dart';
 import '../ui/skin.dart';
 
@@ -104,7 +105,19 @@ class _Star {
   final double x, y, r, period, phase, peak;
 }
 
-final List<_Star> _sky = () {
+List<_Star>? _skyCache;
+int _skyVersion = -1;
+
+/// The star field, rebuilt when the developer settings change.
+List<_Star> get _sky {
+  if (_skyCache == null || _skyVersion != DevValues.version) {
+    _skyVersion = DevValues.version;
+    _skyCache = _buildSky();
+  }
+  return _skyCache!;
+}
+
+List<_Star> _buildSky() {
   final rnd = math.Random(StarTuning.seed);
   // Jittered grid: random, but evenly spread (no clumps or empty halves).
   const n = StarTuning.count;
@@ -126,7 +139,7 @@ final List<_Star> _sky = () {
         0.55 + 0.45 * rnd.nextDouble(),
       ),
   ];
-}();
+}
 
 class _StarPainter extends CustomPainter {
   _StarPainter({

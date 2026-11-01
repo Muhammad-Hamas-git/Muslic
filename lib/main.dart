@@ -4,6 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'debug/dev_values.dart';
 import 'screens/library_screen.dart';
 import 'services/artwork_cache.dart';
 import 'state/library_controller.dart';
@@ -37,8 +38,11 @@ Future<void> main() async {
     SharedPreferences.getInstance(),
     ArtworkCache.open(),
   ]);
+  final prefs = results[0] as SharedPreferences;
+  // Developer overrides of the tuning values (Settings > logo, 5 taps).
+  DevValues.load(prefs);
   runApp(MuslicApp(
-    prefs: results[0] as SharedPreferences,
+    prefs: prefs,
     artwork: results[1] as ArtworkCache,
   ));
 }

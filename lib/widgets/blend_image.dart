@@ -180,7 +180,7 @@ class _BouncyState extends State<Bouncy> with SingleTickerProviderStateMixin {
       duration: ButtonTuning.pressIn, curve: Curves.easeOut);
 
   void _release() => _scale.animateWith(SpringSimulation(
-        const SpringDescription(
+        SpringDescription(
           mass: 1,
           stiffness: ButtonTuning.springStiffness,
           damping: ButtonTuning.springDamping,

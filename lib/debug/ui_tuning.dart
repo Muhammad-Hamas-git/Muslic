@@ -24,13 +24,18 @@ class CarouselTuning {
   static const double centerFraction = 0.49;
 
   /// Time the carousel takes to glide to a song you tapped.
-  static const Duration tapScroll = Duration(milliseconds: 380);
+  static Duration tapScroll = Duration(milliseconds: 380);
+
+  /// Covers fade out between these distances from the centre (in songs),
+  /// so the last one on screen fades instead of clipping at the edge.
+  static double fadeStart = 2.2;
+  static double fadeEnd = 3.2;
 
   /// Glide to the last played song on launch: base time plus time per song
   /// of distance, never longer than the max.
-  static const Duration restoreScrollBase = Duration(milliseconds: 450);
-  static const Duration restoreScrollPerSong = Duration(milliseconds: 45);
-  static const Duration restoreScrollMax = Duration(milliseconds: 1600);
+  static Duration restoreScrollBase = Duration(milliseconds: 450);
+  static Duration restoreScrollPerSong = Duration(milliseconds: 45);
+  static Duration restoreScrollMax = Duration(milliseconds: 1600);
 }
 
 class PlayerMotion {
@@ -73,15 +78,15 @@ class ButtonTuning {
   ButtonTuning._();
 
   /// Size while pressed (1.0 = no change).
-  static const double pressedScale = 0.86;
+  static double pressedScale = 0.86;
 
   /// How fast the button dips when pressed.
-  static const Duration pressIn = Duration(milliseconds: 90);
+  static Duration pressIn = Duration(milliseconds: 90);
 
   /// Release spring. Lower damping = more overshoot and wobble; higher
   /// stiffness = snappier. Critical (no overshoot) is 2 * sqrt(stiffness).
-  static const double springStiffness = 520;
-  static const double springDamping = 16;
+  static double springStiffness = 520;
+  static double springDamping = 16;
 
   /// Loop and shuffle size relative to Figma (1.25 = 25% bigger).
   static const double loopShuffleScale = 1.25;
@@ -92,7 +97,7 @@ class ScrollSoundTuning {
   ScrollSoundTuning._();
 
   /// Volume, 0..1 (relative to the media volume).
-  static const double volume = 0.275;
+  static double volume = 0.275;
 
   /// How many clicks can sound at once. Fast scrolls layer clicks over each
   /// other; once all voices are busy the oldest one restarts.
@@ -100,7 +105,7 @@ class ScrollSoundTuning {
 
   /// Ignore a new click if the last one started less than this ago
   /// (protects against a flood during very fast flings).
-  static const Duration minGap = Duration(milliseconds: 28);
+  static Duration minGap = Duration(milliseconds: 28);
 }
 
 /// Swiping the album art left (next song) or right (previous song).
@@ -108,14 +113,14 @@ class ArtSwipeTuning {
   ArtSwipeTuning._();
 
   /// How far to drag, as a fraction of the card width, to change song.
-  static const double distance = 0.22;
+  static double distance = 0.22;
 
   /// A flick faster than this (px/s) changes song even if short.
-  static const double flingVelocity = 700;
+  static double flingVelocity = 700;
 
   /// Art leaving, and the new art arriving (or springing back).
-  static const Duration out = Duration(milliseconds: 170);
-  static const Duration back = Duration(milliseconds: 320);
+  static Duration out = Duration(milliseconds: 170);
+  static Duration back = Duration(milliseconds: 320);
 }
 
 /// The vibration tick as carousel songs pass. On/off and its length are in
@@ -127,9 +132,12 @@ class HapticTuning {
   /// Separate from the length in Settings: length is how long each tick
   /// lasts, this is how hard the motor pushes. Only phones with fine
   /// vibration control (most recent ones) use it.
-  static const int amplitude = 255;
+  static int amplitude = 255;
+
+  /// Length of each tick in milliseconds (how long, not how hard).
+  static int lengthMs = 12;
 
   /// Ticks closer together than this are skipped, so a fast fling feels
   /// like a smooth buzz instead of a rattle.
-  static const Duration minGap = Duration(milliseconds: 35);
+  static Duration minGap = Duration(milliseconds: 35);
 }

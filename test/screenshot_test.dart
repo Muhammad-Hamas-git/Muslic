@@ -13,6 +13,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:just_audio/just_audio.dart';
 import 'package:muslic/models/track.dart';
+import 'package:muslic/debug/dev_values.dart';
+import 'package:muslic/debug/ui_tuning.dart';
+import 'package:muslic/screens/dev_settings_screen.dart';
 import 'package:muslic/screens/library_screen.dart';
 import 'package:muslic/screens/settings_screen.dart';
 import 'package:muslic/ui/skin.dart';
@@ -445,5 +448,52 @@ void main() {
     }
     await shot(tester, '21_xmb_touch');
     await g.up();
+  });
+
+  testWidgets('developer settings screen', (tester) async {
+    DevValues.unlocked = true;
+    addTearDown(() => DevValues.unlocked = false);
+    await pumpApp(tester, const DevSettingsScreen());
+    await tester.tap(find.text('Scroll sound and vibration'));
+    await settle(tester);
+    await shot(tester, '22_dev_settings');
+  });
+
+  testWidgets('settings footer and developer entry', (tester) async {
+    DevValues.unlocked = true;
+    addTearDown(() => DevValues.unlocked = false);
+    await pumpApp(tester, const SettingsScreen());
+    await tester.drag(find.byType(ListView), const Offset(0, -3000));
+    await settle(tester);
+    await shot(tester, '23_settings_bottom');
+  });
+
+  testWidgets('carousel keeps its place when the player opens (XMB)',
+      (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.xmb);
+    // Scroll down two songs.
+    await tester.drag(find.byType(LibraryScreen), const Offset(0, -300));
+    await settle(tester);
+    await shot(tester, '24a_scrolled');
+    await tester.tapAt(const Offset(110, 712)); // open the player
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Minimize player'));
+    await settle(tester);
+    await shot(tester, '24b_after_open_close');
+  });
+
+  test('developer values export and import round trip', () {
+    final p = DevValues.byKey('haptic.amplitude')!;
+    DevValues.setValue(p, 100);
+    expect(HapticTuning.amplitude, 100);
+    final json = DevValues.exportJson();
+    expect(json, contains('"haptic.amplitude"'));
+    DevValues.resetAll();
+    expect(HapticTuning.amplitude, p.def.round());
+    expect(DevValues.importJson(json), DevValues.params.length);
+    expect(HapticTuning.amplitude, 100);
+    DevValues.resetAll();
+    expect(DevValues.checkPassword('hammas123'), isTrue);
+    expect(DevValues.checkPassword('nope'), isFalse);
   });
 }

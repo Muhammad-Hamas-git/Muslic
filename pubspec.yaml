@@ -18,6 +18,8 @@ dependencies:
   on_audio_query: ^2.9.0
   # Runtime permissions (READ_MEDIA_AUDIO on 13+, READ_EXTERNAL_STORAGE below).
   permission_handler: ^11.3.1
+  # Developer-settings password check (only a hash is stored).
+  crypto: ^3.0.6
   # Settings persistence.
   shared_preferences: ^2.3.2
   # Simple, fast state management.

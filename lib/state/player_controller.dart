@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
+import '../debug/dev_values.dart';
 import '../debug/ambient_tuning.dart';
 import '../debug/ui_tuning.dart';
 import '../services/audio_fx.dart';
@@ -22,6 +23,7 @@ import 'settings_controller.dart';
 ///  - remembering the last song and position between launches
 class PlayerController extends ChangeNotifier {
   PlayerController(this._settings, this._art) {
+    DevValues.changes.addListener(_onDevChange);
     _loudness = AndroidLoudnessEnhancer()..setEnabled(true);
     _eq = AndroidEqualizer()..setEnabled(_settings.eqEnabled);
     _player = AudioPlayer(
@@ -483,8 +485,27 @@ class PlayerController extends ChangeNotifier {
     }
   }
 
+  /// Developer settings changed a tuning value: re-apply effects and, in
+  /// ambient, the ambient speed and pitch, so changes are heard at once.
+  void _onDevChange() {
+    if (ambient) {
+      if (_ramp?.isActive != true) {
+        speed = AmbientTuning.speed;
+        pitch = AmbientTuning.pitch;
+        _player.setSpeed(speed);
+        _player.setPitch(pitch);
+      }
+    } else {
+      if (reverb > 0) reverb = FxTuning.onLevel;
+      if (echo > 0) echo = FxTuning.onLevel;
+    }
+    _applyFx();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
+    DevValues.changes.removeListener(_onDevChange);
     saveSession();
     _saveTimer?.cancel();
     _ramp?.cancel();

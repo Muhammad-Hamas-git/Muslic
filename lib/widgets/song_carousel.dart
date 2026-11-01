@@ -290,8 +290,15 @@ class _Cover extends StatelessWidget {
             (1 - CarouselTuning.whiteWash.last) * ((distance - 3) / 0.5);
     final shadow = (1 - distance * 2).clamp(0.0, 1.0);
     final skin = Skin.of(context);
+    // The farthest covers fade out before they leave, instead of clipping
+    // and vanishing at the screen edge.
+    final t = ((distance - CarouselTuning.fadeStart) /
+            (CarouselTuning.fadeEnd - CarouselTuning.fadeStart))
+        .clamp(0.0, 1.0);
+    final fade = 1 - t * t * (3 - 2 * t);
+    if (fade <= 0) return const SizedBox.shrink();
 
-    return DecoratedBox(
+    final cover = DecoratedBox(
       decoration: BoxDecoration(
         boxShadow: shadow <= 0
             ? null
@@ -315,6 +322,7 @@ class _Cover extends StatelessWidget {
         ],
       ),
     );
+    return fade >= 1 ? cover : Opacity(opacity: fade, child: cover);
   }
 }
 

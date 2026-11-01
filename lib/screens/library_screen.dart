@@ -133,8 +133,11 @@ class _LibraryScreenState extends State<LibraryScreen>
             child: AnimatedBuilder(
               animation: _expansion,
               builder: (context, child) {
+                // Same widget structure at every value (an Opacity of 1
+                // adds no layer): switching structure here recreated the
+                // carousel and sent it back to the top when the player
+                // opened.
                 final hide = _expansion.value * skin.xmb;
-                if (hide <= 0) return child!;
                 return IgnorePointer(
                   ignoring: hide > 0.5,
                   child: Opacity(
@@ -151,9 +154,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                     onSongPassed: () {
                       final settings = context.read<SettingsController>();
                       if (settings.scrollSound) NavSound.instance.click();
-                      if (settings.scrollHaptics) {
-                        Haptics.tick(settings.hapticMs);
-                      }
+                      if (settings.scrollHaptics) Haptics.tick();
                       XmbInput.instance.songPassed();
                     },
                     onScrollDelta: XmbInput.instance.scrolled,

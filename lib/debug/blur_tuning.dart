@@ -58,16 +58,16 @@ class BlurTuning {
   /// [live] Zoom of the blurred image inside the mini player.
   /// 1.0 = image just covers the bar. Above 1 crops in further, hiding the
   /// soft edges the blur leaves at the image border.
-  static const double collapsedZoom = 1.05;
+  static double collapsedZoom = 1.05;
 
   /// [live] Zoom of the blurred image inside the full player card.
   /// Figma uses roughly 1.1 (a 2028 px image behind a 1848 px card).
-  static const double expandedZoom = 1.10;
+  static double expandedZoom = 1.10;
 
   /// [live] Black overlay on top of the blur to keep white text readable.
   /// 0.0 = none, 1.0 = solid black.
-  static const double collapsedDarken = 0.08;
-  static const double expandedDarken = 0.04;
+  static double collapsedDarken = 0.08;
+  static double expandedDarken = 0.04;
 
   /// [live] Cross-fade when the song (and so the background) changes.
   static const Duration crossfade = Duration(milliseconds: 450);

@@ -8,7 +8,9 @@ import '../state/library_controller.dart';
 import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
+import '../debug/dev_values.dart';
 import '../services/haptics.dart';
+import 'dev_settings_screen.dart';
 import '../widgets/blend_image.dart';
 import '../widgets/xmb_background.dart';
 import '../widgets/ambient_stars.dart';
@@ -98,18 +100,9 @@ class SettingsScreen extends StatelessWidget {
                     value: settings.scrollHaptics,
                     onChanged: (v) {
                       settings.setScrollHaptics(v);
-                      if (v) Haptics.tick(settings.hapticMs, force: true);
+                      if (v) Haptics.tick(force: true);
                     },
                   ),
-                  if (settings.scrollHaptics)
-                    _Row(
-                      title: 'Vibration length',
-                      value: '${settings.hapticMs} ms',
-                      below: _LengthSlider(
-                        value: settings.hapticMs,
-                        onChanged: settings.setHapticMs,
-                      ),
-                    ),
                 ]),
                 _Group(label: 'Library', children: [
                   _Row(
@@ -241,14 +234,24 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const _ArtworkRow(),
                 ]),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Center(
-                    child: Text('müslic by dot Studios',
-                        style: Txt.inter(13, FontWeight.w500,
-                            color: Palette.muted)),
-                  ),
+                // Developer settings, once unlocked from the footer logo.
+                ValueListenableBuilder<int>(
+                  valueListenable: DevValues.changes,
+                  builder: (context, _, __) => !DevValues.unlocked
+                      ? const SizedBox.shrink()
+                      : _Group(label: 'Developer', children: [
+                          _Row(
+                            title: 'Developer settings',
+                            subtitle: 'Tune the hardcoded values and '
+                                'export them as JSON',
+                            onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const DevSettingsScreen())),
+                          ),
+                        ]),
                 ),
+                const _Footer(),
               ],
             ),
           ),
@@ -873,39 +876,93 @@ class _NotificationRowState extends State<_NotificationRow>
   }
 }
 
+/// "müslic by dot Studios" with the dot logo. Tapping the logo five times
+/// asks for the developer password.
+class _Footer extends StatefulWidget {
+  const _Footer();
 
-/// Slider for the vibration length. Ticks once at each new value so the
-/// length can be felt while choosing it.
-class _LengthSlider extends StatelessWidget {
-  const _LengthSlider({required this.value, required this.onChanged});
-  final int value;
-  final ValueChanged<int> onChanged;
+  @override
+  State<_Footer> createState() => _FooterState();
+}
+
+class _FooterState extends State<_Footer> {
+  int _taps = 0;
+  DateTime _last = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _tap() {
+    final now = DateTime.now();
+    // Taps must come within 1.5 s of each other.
+    _taps = now.difference(_last) > const Duration(milliseconds: 1500)
+        ? 1
+        : _taps + 1;
+    _last = now;
+    if (_taps < 5) return;
+    _taps = 0;
+    if (DevValues.unlocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Developer settings are already on')));
+      return;
+    }
+    _askPassword();
+  }
+
+  Future<void> _askPassword() async {
+    final ctrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Developer settings'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: 'Password'),
+          onSubmitted: (v) => Navigator.of(ctx).pop(DevValues.checkPassword(v)),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () =>
+                  Navigator.of(ctx).pop(DevValues.checkPassword(ctrl.text)),
+              child: const Text('Unlock')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (!mounted || ok == null) return;
+    if (ok) DevValues.setUnlocked(true);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ok
+            ? 'Developer settings unlocked'
+            : 'Wrong password')));
+  }
 
   @override
   Widget build(BuildContext context) {
     final skin = Skin.of(context);
-    return SliderTheme(
-      data: SliderThemeData(
-        trackHeight: 3,
-        activeTrackColor: skin.ink,
-        inactiveTrackColor: skin.ink.withValues(alpha: 0.15),
-        thumbColor: skin.ink,
-        overlayColor: skin.ink.withValues(alpha: 0.08),
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-        showValueIndicator: ShowValueIndicator.never,
-      ),
-      child: Slider(
-        min: SettingsController.hapticMinMs.toDouble(),
-        max: SettingsController.hapticMaxMs.toDouble(),
-        divisions: SettingsController.hapticMaxMs - SettingsController.hapticMinMs,
-        value: value.toDouble(),
-        onChanged: (v) {
-          final ms = v.round();
-          if (ms != value) {
-            onChanged(ms);
-            Haptics.tick(ms, force: true);
-          }
-        },
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      child: Column(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _tap,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Image.asset(
+                skin.dark ? UiAssets.dotLogoDark : UiAssets.dotLogo,
+                height: 34,
+                filterQuality: FilterQuality.medium,
+                semanticLabel: 'dot Studios',
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text('müslic by dot Studios',
+              style: Txt.inter(13, FontWeight.w500, color: Palette.muted)),
+        ],
       ),
     );
   }

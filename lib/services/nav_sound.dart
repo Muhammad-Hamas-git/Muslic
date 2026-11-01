@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import '../debug/dev_values.dart';
 import '../debug/ui_tuning.dart';
 
 /// The click that plays when the carousel passes a song.
@@ -39,6 +40,7 @@ class NavSound {
       enabled ? (_loading ??= _load()) : Future<void>.value();
 
   Future<void> _load() async {
+    DevValues.changes.addListener(_applyVolume);
     try {
       await AudioPlayer.global.setAudioContext(_context);
       for (var i = 0; i < ScrollSoundTuning.voices; i++) {
@@ -52,6 +54,12 @@ class NavSound {
       }
     } catch (e) {
       debugPrint('müslic: scroll sound unavailable: $e');
+    }
+  }
+
+  void _applyVolume() {
+    for (final v in _voices) {
+      v.setVolume(ScrollSoundTuning.volume).catchError((Object _) {});
     }
   }
 

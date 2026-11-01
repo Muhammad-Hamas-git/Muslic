@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../debug/dev_values.dart';
 import '../debug/xmb_tuning.dart';
 import '../ui/skin.dart';
 
@@ -92,14 +93,6 @@ class XmbBackground extends StatefulWidget {
   State<XmbBackground> createState() => _XmbBackgroundState();
 }
 
-class _Ripple {
-  _Ripple(this.y, this.dir, this.amp);
-  final double y; // px
-  final double dir; // -1 pushes left, 1 right
-  double amp; // fraction of width
-  double age = 0; // s
-}
-
 class _XmbBackgroundState extends State<XmbBackground>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker = createTicker(_tick);
@@ -176,17 +169,15 @@ class _XmbBackgroundState extends State<XmbBackground>
   }
 }
 
-/// The moving parts: wave time, energy, touch ripples and sparkles.
+/// The moving parts: wave time, energy, scroll offset and sparkles.
+/// The wave reacts only to scrolling; a finger only nudges the sparkles.
 class _XmbSim {
   _XmbSim() {
     final rnd = math.Random(7);
     for (var i = 0; i < _n; i++) {
       _seed[i] = rnd.nextDouble();
-      final sz = math.pow(rnd.nextDouble(), XmbTuning.sizeBias).toDouble();
-      _size[i] = XmbTuning.minSize + (XmbTuning.maxSize - XmbTuning.minSize) * sz;
-      final minT = XmbTuning.minTwinkle.inMilliseconds / 1000;
-      final maxT = XmbTuning.maxTwinkle.inMilliseconds / 1000;
-      _period[i] = minT + (maxT - minT) * rnd.nextDouble();
+      _sizeR[i] = rnd.nextDouble();
+      _periodR[i] = rnd.nextDouble();
       _phase[i] = rnd.nextDouble();
       _near[i] = rnd.nextDouble() < XmbTuning.nearWave ? 1 : 0;
       _fx[i] = rnd.nextDouble(); // placed on first layout
@@ -194,6 +185,24 @@ class _XmbSim {
       _lane[i] = _gauss(rnd);
     }
     _rnd = rnd;
+    _refresh();
+  }
+
+  int _version = -1;
+  final Float32List _sizeR = Float32List(_n);
+  final Float32List _periodR = Float32List(_n);
+
+  /// Recomputes sizes and twinkle times from [XmbTuning] (after a change
+  /// in the developer settings).
+  void _refresh() {
+    _version = DevValues.version;
+    final minT = XmbTuning.minTwinkle.inMilliseconds / 1000;
+    final maxT = XmbTuning.maxTwinkle.inMilliseconds / 1000;
+    for (var i = 0; i < _n; i++) {
+      final sz = math.pow(_sizeR[i], XmbTuning.sizeBias).toDouble();
+      _size[i] = XmbTuning.minSize + (XmbTuning.maxSize - XmbTuning.minSize) * sz;
+      _period[i] = minT + (maxT - minT) * _periodR[i];
+    }
   }
 
   static const int _n = XmbTuning.particles;
@@ -202,7 +211,6 @@ class _XmbSim {
   double time = 0; // wave time (speeds up with energy)
   double clock = 0; // real time, for twinkling
   double energy = 0;
-  final List<_Ripple> ripples = [];
 
   // Sparkles: position in px once [size] is known; before that, fractions.
   final Float32List _x = Float32List(_n);
@@ -222,7 +230,6 @@ class _XmbSim {
 
   final Map<int, Offset> _fingers = {};
   double _windX = 0, _windY = 0;
-  double _rippleClock = 0;
 
   static double _gauss(math.Random r) {
     final u = math.max(1e-6, r.nextDouble());
@@ -257,22 +264,12 @@ class _XmbSim {
       ? waveCentre(y) + _lane[i] * size.width * 0.11
       : _fx[i] * size.width;
 
-  void touchDown(int pointer, Offset p) {
-    _fingers[pointer] = p;
-    _addRipple(p, 1.0);
-  }
+  void touchDown(int pointer, Offset p) => _fingers[pointer] = p;
 
   void touchMove(int pointer, Offset p, Offset delta) {
     _fingers[pointer] = p;
-    energy = math.min(XmbTuning.energyMax,
-        energy + delta.distance * XmbTuning.energyPerPx);
     _windX = _windX * 0.6 + delta.dx * 0.4;
     _windY = _windY * 0.6 + delta.dy * 0.4;
-    // A fresh push follows the finger every 90 ms while it drags.
-    if (clock - _rippleClock > 0.09) {
-      _rippleClock = clock;
-      _addRipple(p, 0.5);
-    }
   }
 
   void touchUp(int pointer) => _fingers.remove(pointer);
@@ -282,6 +279,8 @@ class _XmbSim {
 
   void scroll(double delta) {
     scrollShift += delta * XmbTuning.waveScroll;
+    energy = math.min(XmbTuning.energyMax,
+        energy + delta.abs() * XmbTuning.energyPerPx);
     final span = XmbTuning.maxSize - XmbTuning.minSize;
     for (var i = 0; i < _n; i++) {
       final depth = span <= 0 ? 0.5 : (_size[i] - XmbTuning.minSize) / span;
@@ -296,16 +295,6 @@ class _XmbSim {
     energy = math.min(XmbTuning.energyMax, energy + XmbTuning.energyPerSong);
   }
 
-  void _addRipple(Offset p, double strength) {
-    if (size.isEmpty) return;
-    final dir = p.dx < waveCentre(p.dy) ? 1.0 : -1.0; // away from finger
-    // Nearer the wave pushes harder.
-    final dist = (p.dx - waveCentre(p.dy)).abs() / size.width;
-    final near = math.exp(-dist * dist / 0.08);
-    ripples.add(_Ripple(p.dy, dir, XmbTuning.touchPush * strength * near));
-    if (ripples.length > 8) ripples.removeAt(0);
-  }
-
   void step(double dt) {
     clock += dt;
     final decay = math.exp(-dt / (XmbTuning.energyDecay.inMilliseconds / 1000));
@@ -313,11 +302,7 @@ class _XmbSim {
     time += dt *
         XmbTuning.flowSpeed *
         (1 + XmbTuning.energySpeedBoost * energy);
-    final settle = XmbTuning.touchSettle.inMilliseconds / 1000;
-    for (final r in ripples) {
-      r.age += dt;
-    }
-    ripples.removeWhere((r) => r.age > settle * 2.5);
+    if (DevValues.version != _version) _refresh();
     _stepParticles(dt);
     _windX *= decay;
     _windY *= decay;
@@ -365,28 +350,6 @@ class _XmbSim {
       if (_x[i] < -20) _x[i] = w + 20;
       if (_x[i] > w + 20) _x[i] = -20;
     }
-  }
-
-  /// Sideways push of all ripples at height y, in px, and how much of it
-  /// twists across the sheet.
-  double touchAt(double y) {
-    if (ripples.isEmpty) return 0;
-    final reach = XmbTuning.touchReach * size.height;
-    final settle = XmbTuning.touchSettle.inMilliseconds / 1000;
-    var sum = 0.0;
-    for (final r in ripples) {
-      final dy = (y - r.y) / reach;
-      if (dy.abs() > 3) continue;
-      final env = math.exp(-dy * dy) * math.exp(-r.age / settle);
-      // Rises over ~0.15 s, then wobbles back to rest.
-      final rise = 1 - math.exp(-r.age / 0.05);
-      sum += r.dir *
-          r.amp *
-          env *
-          rise *
-          math.cos(XmbTuning.touchWobble * r.age);
-    }
-    return sum * size.width;
   }
 }
 
@@ -473,7 +436,7 @@ class _XmbPainter extends CustomPainter {
           Offset.zero,
           Offset(size.width, size.height * 0.8),
           colors,
-          const [0.0, XmbTuning.gradientMid, 1.0],
+          [0.0, XmbTuning.gradientMid, 1.0],
         ),
     );
 
@@ -498,14 +461,13 @@ class _XmbPainter extends CustomPainter {
     // Scrolling slides the wave's folds along it (in s units).
     final scroll = h <= 0 ? 0.0 : sim.scrollShift / ys;
     final depth = w * XmbTuning.depth;
-    const waves = XmbTuning.waves;
+    final waves = XmbTuning.waves;
 
     var vi = 0;
     for (var r = 0; r < rows; r++) {
       // s runs a little past the screen edges so the ends stay hidden.
       final s = (r / (rows - 1)) * 2.6 - 1.3; // -1.3..1.3
       final y = h * (s * 0.5 + 0.5);
-      final push = sim.touchAt(y);
       final sEdge = 1 - _smooth(1.0, 1.3, s.abs());
       for (var c = 0; c < cols; c++) {
         final z = (c / (cols - 1)) * 2 - 1;
@@ -522,10 +484,8 @@ class _XmbPainter extends CustomPainter {
           xs += a * k.along * cs;
           xz += a * k.twist * cs;
         }
-        // Touch push, twisting the sheet a little so it catches light.
-        final twist = 0.65 + 0.35 * z;
-        final px = x * w + push * twist;
-        final xzPx = xz * w + push * 0.35;
+        final px = x * w;
+        final xzPx = xz * w;
         final xsPx = xs * w;
 
         // Fresnel: bright where the sheet is edge-on to the viewer.
