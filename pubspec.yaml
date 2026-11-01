@@ -63,6 +63,9 @@ flutter:
   assets:
     - assets/ui/
     - assets/sounds/
+    # Font licences, shown on the open-source licences page.
+    - assets/fonts/OFL-Inter.txt
+    - assets/fonts/OFL-KumbhSans.txt
 
   fonts:
     - family: Inter

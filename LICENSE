@@ -1,0 +1,20 @@
+Copyright (c) 2026 dot Studios. All rights reserved.
+
+This software, müslic, and its source code, design, graphics, sounds and
+documentation are proprietary to dot Studios.
+
+No permission is granted to copy, modify, merge, publish, distribute,
+sublicense, sell, or create derivative works of this software, in whole or
+in part, without prior written permission from dot Studios. Viewing this
+repository does not grant any licence.
+
+Third-party components keep their own licences, which this notice does not
+change:
+  - packages/just_audio is a modified copy of the just_audio plugin,
+    MIT License, Copyright (c) 2019-2020 Ryan Heise and contributors
+    (see packages/just_audio/LICENSE).
+  - assets/fonts/Inter.ttf and KumbhSans.ttf are under the SIL Open Font
+    License 1.1 (see assets/fonts/OFL-*.txt).
+  - Libraries fetched at build time (pub.dev and Maven) are under their own
+    permissive licences, listed in the app under Settings > Open-source
+    licences.

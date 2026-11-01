@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show FontFeature, lerpDouble;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
@@ -659,6 +659,12 @@ class _CollapsedContent extends StatelessWidget {
 }
 
 class _ExpandedContent extends StatelessWidget {
+  /// How far the panel's contents move up from their Figma positions, and
+  /// where the timestamps sit (Figma px, panel coordinates). Raise or lower
+  /// [_lift] to rebalance the gaps above the title and below the times.
+  static const double _lift = 52;
+  static const double _timesTop = 426;
+
   const _ExpandedContent({
     required this.player,
     required this.track,
@@ -682,8 +688,12 @@ class _ExpandedContent extends StatelessWidget {
     final f = Fg.of(context);
     final p = layout.panel;
 
+    // Everything in the panel sits [_lift] Figma px higher than in Figma,
+    // which makes room for the timestamps under the seekbar and leaves the
+    // same gap above the title as below the timestamps.
+    double top(double y) => p.top + f(y - _lift);
     Widget at(double x, double y, Widget child) =>
-        Positioned(left: p.left + f(x), top: p.top + f(y), child: child);
+        Positioned(left: p.left + f(x), top: top(y), child: child);
 
     return Stack(
       children: [
@@ -734,14 +744,14 @@ class _ExpandedContent extends StatelessWidget {
         Positioned(
           left: p.left + f(40),
           width: p.width - f(80),
-          top: p.top + f(101),
+          top: top(101),
           height: f(60),
           child: _plainFade(fade, _Title(text: track.title)),
         ),
         Positioned(
           left: p.left + f(40),
           width: p.width - f(80),
-          top: p.top + f(166),
+          top: top(166),
           child: _plainFade(
             fade,
             Text(track.artist,
@@ -809,10 +819,17 @@ class _ExpandedContent extends StatelessWidget {
         ),
         Positioned(
           left: p.left + f(60) - f(15),
-          top: p.top + f(391) - f(10),
+          top: top(391) - f(10),
           width: f(644) + f(30),
           height: f(50),
           child: _plainFade(fade, _Seekbar(player: player)),
+        ),
+        // Elapsed (left) and total length (right), aligned with the bar.
+        Positioned(
+          left: p.left + f(60),
+          top: top(_timesTop),
+          width: f(644),
+          child: _plainFade(fade, _Times(player: player)),
         ),
       ],
     );
@@ -885,6 +902,42 @@ class _LoopButton extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// "1:23" on the left, "4:05" on the right, under the seekbar.
+class _Times extends StatelessWidget {
+  const _Times({required this.player});
+  final PlayerController player;
+
+  static String _fmt(Duration d) {
+    final s = d.inSeconds;
+    final h = s ~/ 3600, m = (s % 3600) ~/ 60, sec = s % 60;
+    final ss = sec.toString().padLeft(2, '0');
+    return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$ss' : '$m:$ss';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final f = Fg.of(context);
+    final style = Txt.inter(f(24), FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.8))
+        .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+    return StreamBuilder<Duration>(
+      stream: player.positionStream,
+      builder: (context, snap) {
+        final total = player.duration;
+        var pos = snap.data ?? Duration.zero;
+        if (total > Duration.zero && pos > total) pos = total;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_fmt(pos), style: style),
+            Text(_fmt(total), style: style),
+          ],
+        );
+      },
     );
   }
 }

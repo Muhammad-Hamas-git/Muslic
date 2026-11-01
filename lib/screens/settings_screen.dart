@@ -962,6 +962,26 @@ class _FooterState extends State<_Footer> {
           const SizedBox(height: 6),
           Text('müslic by dot Studios',
               style: Txt.inter(13, FontWeight.w500, color: Palette.muted)),
+          const SizedBox(height: 4),
+          Text(
+            '© ${DateTime.now().year} dot Studios. All rights reserved.',
+            textAlign: TextAlign.center,
+            style: Txt.inter(11, FontWeight.w400, color: Palette.muted),
+          ),
+          const SizedBox(height: 2),
+          // Required by the open-source licences of the libraries used.
+          TextButton(
+            onPressed: () => showLicensePage(
+              context: context,
+              applicationName: 'müslic',
+              applicationLegalese:
+                  '© ${DateTime.now().year} dot Studios. All rights reserved.',
+            ),
+            child: Text('Open-source licences',
+                style: Txt.inter(12, FontWeight.w500, color: Palette.muted)
+                    .copyWith(decoration: TextDecoration.underline,
+                        decorationColor: Palette.muted)),
+          ),
         ],
       ),
     );

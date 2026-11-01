@@ -39,12 +39,26 @@ Future<void> main() async {
     ArtworkCache.open(),
   ]);
   final prefs = results[0] as SharedPreferences;
+  _registerFontLicences();
   // Developer overrides of the tuning values (Settings > logo, 5 taps).
   DevValues.load(prefs);
   runApp(MuslicApp(
     prefs: prefs,
     artwork: results[1] as ArtworkCache,
   ));
+}
+
+/// Adds the bundled fonts' SIL Open Font Licences to the licences page
+/// (Flutter adds the Dart and Android libraries' licences by itself).
+void _registerFontLicences() {
+  LicenseRegistry.addLicense(() async* {
+    for (final (pkg, file) in const [
+      ('Inter font', 'assets/fonts/OFL-Inter.txt'),
+      ('Kumbh Sans font', 'assets/fonts/OFL-KumbhSans.txt'),
+    ]) {
+      yield LicenseEntryWithLineBreaks([pkg], await rootBundle.loadString(file));
+    }
+  });
 }
 
 class MuslicApp extends StatelessWidget {

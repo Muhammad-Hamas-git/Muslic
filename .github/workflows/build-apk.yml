@@ -72,6 +72,8 @@ jobs:
         run: |
           flutter pub get
           dart run flutter_launcher_icons
+          # Licence of every package the app ships with (licenses.log).
+          python3 ci/licenses.py > licenses.log 2>&1 || true
 
       - name: Analyze, test, build
         shell: bash
@@ -116,6 +118,12 @@ jobs:
             echo "== Sizes"
             ls -la /tmp/out
           } 2>&1 | tee verify.log
+          {
+            echo
+            echo "== Android libraries in the release app (group:artifact)"
+            (cd android && ./gradlew -q :app:dependencies --configuration releaseRuntimeClasspath) 2>/dev/null \
+              | grep -oE "[a-zA-Z0-9_.\-]+:[a-zA-Z0-9_.\-]+:[0-9][^ ]*" | sed -E 's/:[^:]+$//' | sort -u
+          } >> licenses.log 2>&1
           exit 0
 
       # Publish logs to the ci-logs branch so they can be read with plain
@@ -126,7 +134,7 @@ jobs:
         run: |
           mkdir -p /tmp/logs
           cp build.log /tmp/logs/ 2>/dev/null || echo "no build log" > /tmp/logs/build.log
-          cp analyze.log test.log verify.log configure.log /tmp/logs/ 2>/dev/null || true
+          cp analyze.log test.log verify.log configure.log licenses.log /tmp/logs/ 2>/dev/null || true
           cp -r test/screenshots /tmp/logs/ 2>/dev/null || true
           cp -r test/failures /tmp/logs/ 2>/dev/null || true
           cd /tmp/logs
