@@ -47,12 +47,16 @@ class Crt {
   /// Writes [p] into [s]. [size] is the drawing size in shader pixels,
   /// [logical] the same area in points; [img] picks the part of the
   /// texture to show (0..1, used to crop album art like BoxFit.cover).
+  /// Sizes in [p] (scanline size, mask size, dispersion...) are Figma px,
+  /// so [logical] is converted to Figma px with [figma] (points per Figma
+  /// px) before it reaches the shader.
   static void apply(
     ui.FragmentShader s,
     CrtParams p, {
     required Size size,
     required Size logical,
     required double scale,
+    required double figma,
     Rect img = const Rect.fromLTWH(0, 0, 1, 1),
   }) {
     var i = 0;
@@ -74,9 +78,9 @@ class Crt {
     f(p.clipToCurve ? 1 : 0);
     f(p.maskPitch);
     f(p.vignette / 100);
-    f(scale);
-    f(logical.width);
-    f(logical.height);
+    f(scale * figma);
+    f(logical.width / figma);
+    f(logical.height / figma);
     f(img.width);
     f(img.height);
     f(img.left);
@@ -160,6 +164,7 @@ class _CrtFilterState extends State<CrtFilter>
     }
     final shader = _shader ??= program.fragmentShader();
     final dpr = MediaQuery.devicePixelRatioOf(context);
+    final figma = MediaQuery.sizeOf(context).width / 1080;
     return LayoutBuilder(builder: (context, c) {
       final logical = c.biggest;
       return AnimatedBuilder(
@@ -167,7 +172,10 @@ class _CrtFilterState extends State<CrtFilter>
         child: widget.child,
         builder: (context, child) {
           Crt.apply(shader, widget.params,
-              size: logical * dpr, logical: logical, scale: dpr);
+              size: logical * dpr,
+              logical: logical,
+              scale: dpr,
+              figma: figma);
           return ImageFiltered(
             imageFilter: ui.ImageFilter.shader(shader),
             child: child,
@@ -186,7 +194,7 @@ class _Scanlines extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.black.withValues(alpha: (p.scanlines / 100) * 0.5);
-    final step = p.scanlineSize;
+    final step = p.scanlineSize * size.width / 1080;
     for (var y = 0.0; y < size.height; y += step) {
       canvas.drawRect(Rect.fromLTWH(0, y + step / 2, size.width, step / 2), paint);
     }
@@ -277,6 +285,7 @@ class _CrtImageState extends State<CrtImage>
           shader: _shader,
           params: widget.params,
           dpr: MediaQuery.devicePixelRatioOf(context),
+          figma: MediaQuery.sizeOf(context).width / 1080,
           repaint: tick,
         ),
       ),
@@ -290,6 +299,7 @@ class _CrtImagePainter extends CustomPainter {
     required this.shader,
     required this.params,
     required this.dpr,
+    required this.figma,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
@@ -297,6 +307,7 @@ class _CrtImagePainter extends CustomPainter {
   final ui.FragmentShader? shader;
   final CrtParams params;
   final double dpr;
+  final double figma;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -323,7 +334,8 @@ class _CrtImagePainter extends CustomPainter {
       );
       return;
     }
-    Crt.apply(s, params, size: size, logical: size, scale: dpr, img: crop);
+    Crt.apply(s, params,
+        size: size, logical: size, scale: dpr, figma: figma, img: crop);
     s.setImageSampler(0, im);
     canvas.drawRect(rect, Paint()..shader = s);
   }

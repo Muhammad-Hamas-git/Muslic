@@ -181,6 +181,8 @@ Future<void> _loadFonts() async {
 
   await load('Inter', 'assets/fonts/Inter.ttf');
   await load('KumbhSans', 'assets/fonts/KumbhSans.ttf');
+  await load('DSEG14', 'assets/fonts/DSEG14Classic-Regular.ttf');
+  await load('FiraCode', 'assets/fonts/FiraCode-Regular.ttf');
   await load('MaterialIcons', 'fonts/MaterialIcons-Regular.otf')
       .catchError((_) {});
 }
