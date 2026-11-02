@@ -1,18 +1,18 @@
-# file name in assets/ui_source/        Figma asset URL (valid 7 days from 2026-10-04)
-play.png        https://www.figma.com/api/mcp/asset/9375e346-0d07-45da-9b6f-f447486c11da.png
-mini_next.png   https://www.figma.com/api/mcp/asset/4c33a68b-ea02-467d-8e2d-c392d493eb33.png
-mini_prev.png   https://www.figma.com/api/mcp/asset/7a9992c8-b066-472f-8b0f-e95de78395fe.png
-settings.png    https://www.figma.com/api/mcp/asset/b0294587-fb59-4c3a-a4d1-86ed3be5b740.png
-logo.png        https://www.figma.com/api/mcp/asset/28dd0c7e-0de2-43a1-8942-fff97c518373.png
-search.png      https://www.figma.com/api/mcp/asset/d8af05ec-0e8e-46c3-8257-d670bd7154dc.png
-mini_mask.svg   https://www.figma.com/api/mcp/asset/42b52ba2-2665-42e0-a773-397caf142fb9.svg
-panel_bg.png    https://www.figma.com/api/mcp/asset/a3a5911d-0f33-4106-9606-e791143b643c.png
-pause.png       https://www.figma.com/api/mcp/asset/bff449da-ded2-4e89-a2e7-4074692143e7.png
-prev.png        https://www.figma.com/api/mcp/asset/7cc688dc-62f0-491a-931a-36b6b071429f.png
-next.png        https://www.figma.com/api/mcp/asset/cbdca647-9085-4fab-a16d-70b35cd64a66.png
-loop.png        https://www.figma.com/api/mcp/asset/393bc46f-e56e-4332-9847-6a23c042fcdc.png
-shuffle.png     https://www.figma.com/api/mcp/asset/136d2fed-8126-4a08-8b86-6bcd3954010f.png
-equalizer.png   https://www.figma.com/api/mcp/asset/1c916ebe-5e45-47ee-80d9-ec3ebd15116b.png
-minimize.png    https://www.figma.com/api/mcp/asset/812c9572-ca87-4055-865a-094236935468.png
-player_mask.svg https://www.figma.com/api/mcp/asset/29000d83-f85c-49ca-bd9e-cac6579c7a52.svg
-playbar.svg     https://www.figma.com/api/mcp/asset/dfe27733-5626-4c80-a84d-f93a038c9af6.svg
+# file name in assets/ui_source/        Figma asset URL (valid 7 days from 2026-11-02)
+term_logo.png       https://www.figma.com/api/mcp/asset/dbb3701a-ba3d-40d8-b23f-82f09e572240.png
+term_settings.png   https://www.figma.com/api/mcp/asset/e708e1ef-128c-4cb0-a1fb-d887ea2c3ce1.png
+term_search.png     https://www.figma.com/api/mcp/asset/deb8a2ac-621c-45a4-8ad6-74062cadd080.png
+term_bar.png        https://www.figma.com/api/mcp/asset/5bf8bc0f-6307-4291-aa14-a2c6858282cf.png
+term_loop.png       https://www.figma.com/api/mcp/asset/59fce4ea-aaf8-4a98-a673-487a8ea3cce6.png
+term_shuffle.png    https://www.figma.com/api/mcp/asset/4aeb02b9-50dd-4c26-b867-37f6c26fa8fd.png
+term_next.png       https://www.figma.com/api/mcp/asset/c726e2f2-f814-4fc1-a159-63353c9e9997.png
+term_prev.png       https://www.figma.com/api/mcp/asset/20bfbd62-eb9f-45cf-95c8-8f5521cf80be.png
+term_play.png       https://www.figma.com/api/mcp/asset/740e7dd4-92bd-4ead-bea4-594cf8e5ae06.png
+term_title_lib.png  https://www.figma.com/api/mcp/asset/c1b6835c-71af-4bab-b9ff-2ded68b0eb06.png
+term_title_pl.png   https://www.figma.com/api/mcp/asset/34ed5366-3e73-4594-8578-0570343ac032.png
+term_tv.png         https://www.figma.com/api/mcp/asset/12c7a9ff-3e9f-4e83-9f87-3688318d75a7.png
+term_eq.png         https://www.figma.com/api/mcp/asset/a762c46e-31e2-4a5b-831d-4c3a9b4db6d3.png
+term_ambient.png    https://www.figma.com/api/mcp/asset/4127ea51-8868-4530-adb4-5532d3b0dc8d.png
+term_playhead.png   https://www.figma.com/api/mcp/asset/38495b79-29da-4a44-ab74-48cc5f11e68e.png
+term_playbar.svg    https://www.figma.com/api/mcp/asset/2a2cadc5-5ff4-420a-b0d2-beada15fec22.svg
+term_logo_pl.png    https://www.figma.com/api/mcp/asset/fd0f84a5-8d2a-48ee-a75b-033c48f059f8.png
