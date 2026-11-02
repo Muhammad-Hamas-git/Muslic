@@ -55,23 +55,37 @@ def fit(name, size, resample=Image.LANCZOS):
 def pause_variant(play):
     """The play button with its triangle replaced by two bars."""
     im = play.copy()
+    a = np.asarray(im).astype(int)
+    h, w = a.shape[:2]
+    # The light triangle outline, in the middle of the button.
+    top, bottom = round(h * 0.15), round(h * 0.85)
+    mid = a[top:bottom, w // 4: 3 * w // 4]
+    ys, xs = np.where(mid[..., :3].sum(axis=2) > 400)
+    x0, x1 = xs.min() + w // 4, xs.max() + w // 4
+    y0, y1 = ys.min() + top, ys.max() + top
+    ys = ys + top
     d = ImageDraw.Draw(im)
-    face = im.getpixel((20, 29))
+    face = tuple(a[h // 2, w // 8])
     stroke = (178, 181, 186, 255)
-    d.rectangle((68, 8, 118, 50), fill=face)
-    for x in (84, 98):
-        d.rounded_rectangle((x, 16, x + 7, 42), radius=2, fill=stroke)
+    d.rectangle((x0 - 2, y0 - 2, x1 + 2, y1 + 2), fill=face)
+    bh = (y1 - y0) * 0.8
+    bw = max(4, round((x1 - x0) * 0.2))
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    gap = bw * 0.9
+    for bx in (cx - gap / 2 - bw, cx + gap / 2):
+        d.rounded_rectangle((bx, cy - bh / 2, bx + bw, cy + bh / 2),
+                            radius=2, fill=stroke)
     return im
 
 
 # name, Figma size, dither (levels, block) or None, resample
 JOBS = [
-    ("term_bar.png", (1006, 176), (3, 1)),
-    ("term_play.png", (180, 58), (3, 1)),
-    ("term_prev.png", (81, 47), (3, 1)),
-    ("term_next.png", (81, 47), (3, 1)),
-    ("term_loop.png", (61, 61), (3, 1)),
-    ("term_shuffle.png", (61, 61), (3, 1)),
+    ("term_bar.png", (1025, 200), (3, 1)),
+    ("term_play.png", (202, 65), (3, 1)),
+    ("term_prev.png", (91, 53), (3, 1)),
+    ("term_next.png", (91, 53), (3, 1)),
+    ("term_loop.png", (70, 70), (3, 1)),
+    ("term_shuffle.png", (70, 70), (3, 1)),
     ("term_eq.png", (75, 43), (3, 1)),
     ("term_ambient.png", (75, 43), (3, 1)),
     ("term_tv.png", (1026, 786), (4, 2)),

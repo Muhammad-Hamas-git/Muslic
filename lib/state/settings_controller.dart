@@ -41,6 +41,7 @@ class SettingsController extends ChangeNotifier {
   AppTheme theme = AppTheme.light;
   AppStyle style = AppStyle.classic;
   bool scrollSound = true; // click when the carousel passes a song
+  bool buttonSounds = true; // Terminal: mechanical press/release clicks
   bool scrollHaptics = true; // tick of vibration as songs pass
   // (its length and strength are in lib/debug/ui_tuning.dart HapticTuning)
 
@@ -79,6 +80,7 @@ class SettingsController extends ChangeNotifier {
         AppStyle.classic;
     scrollSound = _prefs.getBool('scrollSound') ?? true;
     scrollHaptics = _prefs.getBool('scrollHaptics') ?? true;
+    buttonSounds = _prefs.getBool('buttonSounds') ?? true;
     resumeOnHeadphones = _prefs.getBool('resumeOnHeadphones') ?? false;
     rememberPlaybackSettings =
         _prefs.getBool('rememberPlaybackSettings') ?? true;
@@ -110,6 +112,7 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setString('style', style.name);
     await _prefs.setBool('scrollSound', scrollSound);
     await _prefs.setBool('scrollHaptics', scrollHaptics);
+    await _prefs.setBool('buttonSounds', buttonSounds);
     await _prefs.setBool('resumeOnHeadphones', resumeOnHeadphones);
     await _prefs.setBool(
         'rememberPlaybackSettings', rememberPlaybackSettings);
@@ -187,6 +190,11 @@ class SettingsController extends ChangeNotifier {
 
   void setStyle(AppStyle v) {
     style = v;
+    _commit();
+  }
+
+  void setButtonSounds(bool v) {
+    buttonSounds = v;
     _commit();
   }
 

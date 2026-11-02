@@ -15,9 +15,13 @@ import 'glass_slider.dart';
 /// blend keeps working while it animates) and as a normal Opacity to the
 /// controls on top, which are plain white drawings.
 class EqualizerPanel extends StatelessWidget {
-  const EqualizerPanel({super.key, this.fade = 1.0});
+  const EqualizerPanel({super.key, this.fade = 1.0, this.showPanel = true});
 
   final double fade;
+
+  /// Draw the glass panel behind the controls (off on the Terminal TV,
+  /// whose screen is the background).
+  final bool showPanel;
 
   @override
   Widget build(BuildContext context) {
@@ -155,12 +159,13 @@ class EqualizerPanel extends StatelessWidget {
       children: [
         // Panel image is 1180 px wide for a 787 Figma px panel, so its
         // corners are drawn at 787/1180 of source size, scaled to screen.
-        BlendImage(
-          UiAssets.panel,
-          opacity: fade,
-          sliceInsets: const EdgeInsets.all(110),
-          sliceScale: f(787) / 1180,
-        ),
+        if (showPanel)
+          BlendImage(
+            UiAssets.panel,
+            opacity: fade,
+            sliceInsets: const EdgeInsets.all(110),
+            sliceScale: f(787) / 1180,
+          ),
         if (fade > 0)
           fade >= 1 ? controls : Opacity(opacity: fade, child: controls),
       ],

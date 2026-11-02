@@ -112,7 +112,7 @@ class _TerminalCarouselState extends State<TerminalCarousel>
   bool get _horizontal => widget.expansion.value >= 0.5;
 
   double _step(TerminalLayout l) =>
-      _horizontal ? l.f(TerminalTuning.hSideOffset) : l.f(CarouselTuning.scrollStep);
+      _horizontal ? l.f(TerminalTuning.hOffset[1]) : l.f(CarouselTuning.scrollStep);
 
   void _drag(DragUpdateDetails d, TerminalLayout l) {
     _page.stop();
@@ -153,10 +153,10 @@ class _TerminalCarouselState extends State<TerminalCarousel>
   }
 
   double _horizontalScale(TerminalLayout l) =>
-      ((l.roomBottom - l.roomTop) / l.f(763)).clamp(0.6, 1.0).toDouble();
+      ((l.roomBottom - l.roomTop) / l.f(750)).clamp(0.6, 1.0).toDouble();
 
   double _horizontalCentre(TerminalLayout l) =>
-      l.roomTop + (l.roomBottom - l.roomTop) * 0.455;
+      l.roomTop + (l.roomBottom - l.roomTop) * TerminalTuning.hCentreAt;
 
   _Pose _pose(int i, TerminalLayout l, BuildContext context) {
     final f = l.f;
@@ -179,22 +179,18 @@ class _TerminalCarouselState extends State<TerminalCarousel>
         .clamp(0.0, 1.0);
     final vOpacity = 1 - vFadeT * vFadeT * (3 - 2 * vFadeT);
 
-    // Horizontal (open player).
+    // Horizontal (open player), from the tables in TerminalTuning.
     final k = _horizontalScale(l);
-    final near = math.min(ad, 1.0);
-    final hSize = f(lerpDouble(
-            TerminalTuning.hCentreSize, TerminalTuning.hSideSize, near)!) *
-        k;
-    final hCx = f(540) +
-        sign *
-            f(TerminalTuning.hSideOffset * near + math.max(0.0, ad - 1) * 170) *
-            k;
+    final hSize = f(_table(TerminalTuning.hSize, ad)) * k;
+    final hCx = f(540) + sign * f(_table(TerminalTuning.hOffset, ad)) * k;
     final hCy = _horizontalCentre(l);
     final hRect = Rect.fromCenter(
         center: Offset(hCx, hCy), width: hSize, height: hSize);
-    final hAngle = sign * TerminalTuning.hSideAngle * near * math.pi / 180;
-    final hWash = TerminalTuning.hSideWash * near;
-    final hOpacity = (1 - (ad - 1.2) / 0.7).clamp(0.0, 1.0).toDouble();
+    final hAngle =
+        sign * _table(TerminalTuning.hAngle, ad) * math.pi / 180;
+    final hWash = _table(TerminalTuning.hWash, ad);
+    final hOpacity =
+        _table(TerminalTuning.hOpacity, ad).clamp(0.0, 1.0).toDouble();
 
     return _Pose(
       rect: Rect.lerp(vRect, hRect, t)!,

@@ -147,6 +147,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     // Terminal theme: its own screen and player.
     if (style == AppStyle.terminal) {
       NavSound.instance.preload(beep: true);
+      NavSound.instance.preloadButtons();
       final ready = library.status == LibraryStatus.ready &&
           library.tracks.isNotEmpty;
       return Scaffold(

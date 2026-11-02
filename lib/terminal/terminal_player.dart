@@ -15,6 +15,7 @@ import '../ui/design.dart';
 import '../widgets/blend_image.dart';
 import '../widgets/crt.dart';
 import '../widgets/equalizer_panel.dart';
+import 'mech_sound.dart';
 import 'terminal_layout.dart';
 
 /// The Terminal theme's player: the bar at the bottom and the TV that
@@ -175,7 +176,8 @@ class _PixelButton extends StatelessWidget {
         child: img,
       );
     }
-    return Bouncy(
+    return MechSound(
+      child: Bouncy(
       onTap: onTap,
       semanticLabel: label,
       child: Stack(
@@ -195,6 +197,7 @@ class _PixelButton extends StatelessWidget {
             ),
         ],
       ),
+    ),
     );
   }
 }
@@ -219,12 +222,12 @@ class _Bar extends StatelessWidget {
           child: Image.asset(UiAssets.termBar,
               fit: BoxFit.fill, filterQuality: FilterQuality.none),
         ),
-        at(78, 42, 590, 96, const ColoredBox(color: Colors.black)),
+        at(84, 29, 550, 130, const ColoredBox(color: Colors.black)),
         at(
-          84,
-          49,
-          82,
-          82,
+          86,
+          41,
+          106,
+          106,
           ValueListenableBuilder<File?>(
             valueListenable: cache.sharp(track),
             builder: (context, file, _) =>
@@ -232,20 +235,20 @@ class _Bar extends StatelessWidget {
           ),
         ),
         at(
-          175,
+          203,
           50,
           420,
-          34,
+          38,
           CrtFilter(
             params: TerminalTuning.miniTime,
             child: _TimeText(player: player),
           ),
         ),
         at(
-          175,
-          87,
-          478,
-          44,
+          203,
+          101,
+          420,
+          48,
           CrtFilter(
             params: TerminalTuning.miniTitle,
             // DSEG's space is narrow; '!' is its full-width blank.
@@ -254,10 +257,10 @@ class _Bar extends StatelessWidget {
           ),
         ),
         at(
-          698,
-          16,
-          61,
-          61,
+          674,
+          19,
+          70,
+          70,
           _PixelButton(
             asset: UiAssets.termLoop,
             label: switch (loop) {
@@ -271,10 +274,10 @@ class _Bar extends StatelessWidget {
           ),
         ),
         at(
-          698,
-          92,
-          61,
-          61,
+          674,
+          103,
+          70,
+          70,
           _PixelButton(
             asset: UiAssets.termShuffle,
             label: player.shuffle ? 'Shuffle on' : 'Shuffle off',
@@ -283,22 +286,22 @@ class _Bar extends StatelessWidget {
           ),
         ),
         at(
-          781,
-          25,
-          180,
-          58,
+          772,
+          29,
+          202,
+          65,
           _PixelButton(
             asset: player.playing ? UiAssets.termPause : UiAssets.termPlay,
             label: player.playing ? 'Pause' : 'Play',
             onTap: player.togglePlay,
           ),
         ),
-        at(781, 99, 81, 47,
+        at(772, 114, 91, 53,
             _PixelButton(
                 asset: UiAssets.termPrev,
                 label: 'Previous',
                 onTap: player.previous)),
-        at(880, 99, 81, 47,
+        at(883, 114, 91, 53,
             _PixelButton(
                 asset: UiAssets.termNext, label: 'Next', onTap: player.next)),
       ],
@@ -333,7 +336,7 @@ class _TimeText extends StatelessWidget {
             maxLines: 1,
             style: TextStyle(
               fontFamily: 'FiraCode',
-              fontSize: f(20),
+              fontSize: f(22),
               color: TerminalTuning.phosphor,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
@@ -354,7 +357,7 @@ class _LcdTitle extends StatelessWidget {
     final f = Fg.of(context);
     final style = TextStyle(
         fontFamily: 'DSEG14',
-        fontSize: f(32),
+        fontSize: f(34),
         height: 1.2,
         color: TerminalTuning.phosphor);
     return LayoutBuilder(builder: (context, c) {
@@ -429,12 +432,28 @@ class _Tv extends StatelessWidget {
                         decodeWidth: 900),
                   ),
                 ),
+              // Equalizer on the TV: black screen, green controls, behind
+              // the same CRT glass (gentler settings, so text stays sharp).
               if (eq > 0)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(f(40)),
-                  child: ColoredBox(
-                    color: Colors.black.withValues(alpha: eq),
-                    child: EqualizerPanel(fade: eq),
+                Opacity(
+                  opacity: eq,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(f(40)),
+                    child: ColoredBox(
+                      color: Colors.black,
+                      child: CrtFilter(
+                        params: TerminalTuning.tvEqualizer,
+                        child: ColorFiltered(
+                          colorFilter: const ColorFilter.matrix(<double>[
+                            0.0213, 0.0715, 0.0072, 0, 0, //
+                            0.2126, 0.7152, 0.0722, 0, 0, //
+                            0.0213, 0.0715, 0.0072, 0, 0, //
+                            0, 0, 0, 1, 0,
+                          ]),
+                          child: const EqualizerPanel(showPanel: false),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
             ],

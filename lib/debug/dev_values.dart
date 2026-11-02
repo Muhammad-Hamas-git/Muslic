@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ambient_tuning.dart';
 import 'blur_tuning.dart';
+import 'terminal_tuning.dart';
 import 'ui_tuning.dart';
 import 'xmb_tuning.dart';
 
@@ -498,6 +499,86 @@ class DevValues {
     ms(bc, 'carousel.restoreMax', 'Launch scroll maximum', 100, 5000,
         () => CarouselTuning.restoreScrollMax,
         (v) => CarouselTuning.restoreScrollMax = v);
+
+    // Terminal theme.
+    const tm = 'Terminal';
+    d(tm, 'term.buttonVolume', 'Button sound volume', 0, 1,
+        () => TerminalTuning.buttonSoundVolume,
+        (v) => TerminalTuning.buttonSoundVolume = v);
+    ms(tm, 'term.open', 'TV pull-out time', 100, 1500,
+        () => TerminalTuning.open, (v) => TerminalTuning.open = v);
+    d(tm, 'term.gradientLib', 'Green gradient end (library)', 0.1, 1,
+        () => TerminalTuning.gradientEndLibrary,
+        (v) => TerminalTuning.gradientEndLibrary = v);
+    d(tm, 'term.glow', 'Title glow', 0, 120,
+        () => TerminalTuning.titleGlowBlur,
+        (v) => TerminalTuning.titleGlowBlur = v,
+        dec: 0);
+
+    const tc = 'Terminal carousel (TV out)';
+    const names = ['centre', 'next', 'outer', 'beyond'];
+    void table(String key, String label, List<double> list, double min,
+        double max, int dec) {
+      for (var i = 0; i < list.length; i++) {
+        d(tc, 'term.$key$i', '$label (${names[i]})', min, max,
+            () => list[i], (v) => list[i] = v,
+            dec: dec);
+      }
+    }
+
+    table('size', 'Size', TerminalTuning.hSize, 100, 900, 0);
+    table('offset', 'Distance', TerminalTuning.hOffset, 0, 1200, 0);
+    table('angle', 'Turn', TerminalTuning.hAngle, 0, 85, 0);
+    table('wash', 'White wash', TerminalTuning.hWash, 0, 1, 2);
+    table('opacity', 'Opacity', TerminalTuning.hOpacity, 0, 1, 2);
+    d(tc, 'term.perspective', 'Perspective', 0, 0.004,
+        () => TerminalTuning.hPerspective,
+        (v) => TerminalTuning.hPerspective = v,
+        dec: 4);
+    d(tc, 'term.centreAt', 'Row height position', 0, 1,
+        () => TerminalTuning.hCentreAt, (v) => TerminalTuning.hCentreAt = v);
+
+    void crt(String id, String label, CrtParams p) {
+      final g = 'Terminal CRT: $label';
+      void c(String k, String l, double min, double max,
+              double Function() rd, void Function(double) wr,
+              {int dec = 1}) =>
+          d(g, 'crt.$id.$k', l, min, max, rd, wr, dec: dec);
+      c('curvature', 'Curvature', 0, 100, () => p.curvature,
+          (v) => p.curvature = v, dec: 0);
+      c('scanlines', 'Scanlines', 0, 100, () => p.scanlines,
+          (v) => p.scanlines = v, dec: 0);
+      c('scanSize', 'Scanline size', 1, 32, () => p.scanlineSize,
+          (v) => p.scanlineSize = v);
+      c('mask', 'RGB grille', 0, 100, () => p.mask, (v) => p.mask = v,
+          dec: 0);
+      c('maskPitch', 'RGB grille size', 2, 12, () => p.maskPitch,
+          (v) => p.maskPitch = v);
+      c('aberration', 'Colour fringing', 0, 100, () => p.aberration,
+          (v) => p.aberration = v, dec: 0);
+      c('flicker', 'Flicker', 0, 100, () => p.flicker,
+          (v) => p.flicker = v, dec: 0);
+      c('noise', 'Static', 0, 100, () => p.noise, (v) => p.noise = v,
+          dec: 0);
+      c('noiseSize', 'Static size', 1, 8, () => p.noiseSize,
+          (v) => p.noiseSize = v);
+      c('roll', 'Refresh bar speed', 0, 5, () => p.rollSpeed,
+          (v) => p.rollSpeed = v, dec: 2);
+      c('jitter', 'Jitter', 0, 100, () => p.jitter, (v) => p.jitter = v);
+      c('vignette', 'Vignette', 0, 100, () => p.vignette,
+          (v) => p.vignette = v, dec: 0);
+      c('brightness', 'Brightness', -1, 1, () => p.brightness,
+          (v) => p.brightness = v, dec: 2);
+      c('speed', 'Animation speed', 0, 3, () => p.speed,
+          (v) => p.speed = v, dec: 2);
+    }
+
+    crt('screen', 'whole screen', TerminalTuning.screen);
+    crt('tvArt', 'TV album art', TerminalTuning.tvArt);
+    crt('tvEq', 'TV equalizer', TerminalTuning.tvEqualizer);
+    crt('miniArt', 'bar album art', TerminalTuning.miniArt);
+    crt('miniTitle', 'bar title', TerminalTuning.miniTitle);
+    crt('miniTime', 'bar time', TerminalTuning.miniTime);
 
     return out;
   }

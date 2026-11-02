@@ -24,13 +24,13 @@ class TerminalLayout {
 
   double x(double v) => f(v);
 
-  /// Player bar (Figma 37, 2109, 1006 x 176).
-  Rect get bar => Rect.fromLTWH(f(37), bottom(2109), f(1006), f(176));
+  /// Player bar (Figma 22, 2096, 1025 x 200).
+  Rect get bar => Rect.fromLTWH(f(22), bottom(2096), f(1025), f(200));
 
-  /// TV fully open (Figma 27, 1323, 1026 x 786).
-  Rect get tvOpen => Rect.fromLTWH(f(27), bottom(1323), f(1026), f(786));
+  /// TV fully open (Figma 27, 1310, 1026 x 786).
+  Rect get tvOpen => Rect.fromLTWH(f(27), bottom(1310), f(1026), f(786));
 
   /// Room for the horizontal carousel: between the artist name and the TV.
   double get roomTop => top(560);
-  double get roomBottom => bottom(1323);
+  double get roomBottom => bottom(1310);
 }

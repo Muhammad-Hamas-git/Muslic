@@ -7,6 +7,7 @@ import '../models/track.dart';
 import '../ui/design.dart';
 import '../widgets/blend_image.dart';
 import '../widgets/crt.dart';
+import 'mech_sound.dart';
 import 'terminal_carousel.dart';
 import 'terminal_layout.dart';
 import 'terminal_player.dart';
@@ -95,11 +96,13 @@ class TerminalView extends StatelessWidget {
           top: l.top(79),
           width: f(72),
           height: f(72),
-          child: Bouncy(
-            onTap: onSettings,
-            semanticLabel: 'Settings',
-            child: Image.asset(UiAssets.termSettings,
-                filterQuality: FilterQuality.none),
+          child: MechSound(
+            child: Bouncy(
+              onTap: onSettings,
+              semanticLabel: 'Settings',
+              child: Image.asset(UiAssets.termSettings,
+                  filterQuality: FilterQuality.none),
+            ),
           ),
         ),
         Positioned(
@@ -107,7 +110,7 @@ class TerminalView extends StatelessWidget {
           top: l.top(79),
           width: f(72),
           height: f(72),
-          child: searchIcon,
+          child: MechSound(child: searchIcon),
         ),
       ],
     );

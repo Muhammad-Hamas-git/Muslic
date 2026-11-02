@@ -87,50 +87,70 @@ class TerminalTuning {
   static Color titleGlow = const Color(0xAA077B07);
   static double titleGlowBlur = 40;
 
-  // ---- CRT presets (from the Figma frames) ----------------------------
+  // ---- CRT presets ----------------------------------------------------
+  // Started from the Figma frames, then softened for comfortable viewing:
+  // finer RGB grille (mask size 4 instead of 12), less colour fringing,
+  // flicker, static and jitter, and a slower refresh bar.
 
   /// The whole screen behind the player.
-  static CrtParams screen = CrtParams();
+  static CrtParams screen = CrtParams(
+      scanlines: 12, scanlineSize: 6, mask: 12, maskPitch: 4,
+      aberration: 16, flicker: 22, noise: 8, rollSpeed: 2, jitter: 1.5);
 
   /// Album art in the player bar's little screen.
   static CrtParams miniArt = CrtParams(
-      maskPitch: 2, scanlines: 43, curvature: 26, vignette: 9,
-      scanlineSize: 6.5);
+      curvature: 26, vignette: 9, scanlines: 30, scanlineSize: 5,
+      mask: 15, maskPitch: 2, aberration: 20, flicker: 25, noise: 10,
+      rollSpeed: 2, jitter: 1.5);
 
   /// Song title in the player bar.
-  static CrtParams miniTitle = CrtParams(jitter: 25, aberration: 100);
+  static CrtParams miniTitle = CrtParams(
+      scanlines: 12, scanlineSize: 5, mask: 10, maskPitch: 3,
+      aberration: 40, flicker: 25, noise: 8, rollSpeed: 2, jitter: 10);
 
   /// "0:50 / 5:14" in the player bar.
   static CrtParams miniTime = CrtParams(
-      flicker: 25, noise: 72, scanlineSize: 4.5, aberration: 68);
+      scanlines: 12, scanlineSize: 4.5, mask: 10, maskPitch: 3,
+      aberration: 28, flicker: 15, noise: 30, rollSpeed: 2, jitter: 1.5);
 
   /// Album art on the TV.
-  static CrtParams tvArt = CrtParams(curvature: 25);
+  static CrtParams tvArt = CrtParams(
+      curvature: 25, scanlines: 14, scanlineSize: 6, mask: 14, maskPitch: 4,
+      aberration: 18, flicker: 22, noise: 8, rollSpeed: 2, jitter: 1.5);
+
+  /// The equalizer on the TV: same glass, kept gentle so text stays sharp.
+  static CrtParams tvEqualizer = CrtParams(
+      curvature: 12, scanlines: 10, scanlineSize: 5, mask: 8, maskPitch: 3,
+      aberration: 8, flicker: 12, noise: 4, rollSpeed: 1.5, jitter: 0);
 
   // ---- Carousel --------------------------------------------------------
 
-  /// Open player: centred cover size, and neighbour covers' size, sideways
-  /// distance from the centre and 3D turn (degrees).
-  static double hCentreSize = 500;
-  static double hSideSize = 520;
-  static double hSideOffset = 306;
-  static double hSideAngle = 58;
+  /// Open player, by distance from the centre (centre, next, the one
+  /// after, beyond): cover size, sideways distance, 3D turn in degrees,
+  /// white wash and opacity. The outer pair runs off the screen edges so
+  /// it is clear the row scrolls.
+  static List<double> hSize = [600, 490, 410, 360];
+  static List<double> hOffset = [0, 380, 560, 700];
+  static List<double> hAngle = [0, 58, 64, 68];
+  static List<double> hWash = [0, 0.30, 0.50, 0.60];
+  static List<double> hOpacity = [1, 1, 0.65, 0];
 
   /// Perspective strength of the turned covers (bigger = stronger).
   static double hPerspective = 0.0011;
 
-  /// Vertical centre of the horizontal carousel (Figma y).
-  static double hCentreY = 907;
-
-  /// White wash on the turned covers.
-  static double hSideWash = 0.30;
+  /// Where the row sits between the artist name and the TV (0 = top,
+  /// 1 = bottom), measured at the centre of the covers.
+  static double hCentreAt = 0.477;
 
   /// How long the carousel takes to settle on a song after a swipe.
   static Duration snap = const Duration(milliseconds: 320);
 
   // ---- Player ----------------------------------------------------------
 
-  /// TV position when fully open (Figma), and how long opening takes.
-  static double tvTop = 1323;
+  /// How long pulling the TV out takes.
   static Duration open = const Duration(milliseconds: 520);
+
+  /// Mechanical click when a player or TV button goes down and comes back
+  /// up (two different sounds), 0..1.
+  static double buttonSoundVolume = 0.7;
 }

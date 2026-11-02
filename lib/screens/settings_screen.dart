@@ -102,6 +102,13 @@ class SettingsScreen extends StatelessWidget {
                     value: settings.scrollSound,
                     onChanged: settings.setScrollSound,
                   ),
+                  if (settings.style == AppStyle.terminal)
+                    _SwitchRow(
+                      title: 'Button sounds',
+                      subtitle: 'Mechanical clicks on the player buttons',
+                      value: settings.buttonSounds,
+                      onChanged: settings.setButtonSounds,
+                    ),
                   _SwitchRow(
                     title: 'Scroll vibration',
                     subtitle: 'A light tick as songs pass in the carousel',
