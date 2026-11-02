@@ -56,6 +56,8 @@ void _registerFontLicences() {
     for (final (pkg, file) in const [
       ('Inter font', 'assets/fonts/OFL-Inter.txt'),
       ('Kumbh Sans font', 'assets/fonts/OFL-KumbhSans.txt'),
+      ('DSEG font', 'assets/fonts/OFL-DSEG.txt'),
+      ('Fira Code font', 'assets/fonts/OFL-FiraCode.txt'),
     ]) {
       yield LicenseEntryWithLineBreaks([pkg], await rootBundle.loadString(file));
     }

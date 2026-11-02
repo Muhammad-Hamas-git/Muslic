@@ -1,6 +1,6 @@
 import 'dart:ui' show Color;
 
-/// The XMB theme's animated background (lib/widgets/xmb_background.dart).
+/// The Wave theme's animated background (lib/widgets/xmb_background.dart).
 /// Every value here is safe to change; rebuild to see it.
 ///
 /// The wave is a 3D sheet drawn as a mesh, lit like the PS3's: it is clear
@@ -91,7 +91,7 @@ class XmbTuning {
   // ---- Player ----------------------------------------------------------
 
   /// Opacity of the blurred album art behind the mini player and the open
-  /// player in XMB (the controls and text stay fully solid).
+  /// player in Wave (the controls and text stay fully solid).
   static double playerBackgroundOpacity = 0.75;
 
   // ---- Particles -------------------------------------------------------

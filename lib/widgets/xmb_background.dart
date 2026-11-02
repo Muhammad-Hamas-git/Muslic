@@ -9,7 +9,7 @@ import '../debug/dev_values.dart';
 import '../debug/xmb_tuning.dart';
 import '../ui/skin.dart';
 
-/// Touch and scroll input for the XMB background. Screens forward their
+/// Touch and scroll input for the Wave background. Screens forward their
 /// pointer events here (see [XmbTouch]) and the carousel reports each song
 /// it passes; every live [XmbBackground] reacts.
 class XmbInput {
@@ -71,7 +71,7 @@ class XmbTouch extends StatelessWidget {
   }
 }
 
-/// The XMB theme's background: gradient, the folding light wave and the
+/// The Wave theme's background: gradient, the folding light wave and the
 /// sparkles, reacting to touch and scrolling. Tuning: [XmbTuning] in
 /// lib/debug/xmb_tuning.dart.
 ///
@@ -83,7 +83,7 @@ class XmbTouch extends StatelessWidget {
 class XmbBackground extends StatefulWidget {
   const XmbBackground({super.key, this.opacity = 1});
 
-  /// Fade of the whole background (the Classic/XMB cross-fade).
+  /// Fade of the whole background (the Classic/Wave cross-fade).
   final double opacity;
 
   /// Off in widget tests that need a still frame.

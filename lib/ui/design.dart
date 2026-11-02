@@ -33,6 +33,21 @@ class UiAssets {
   static const ambient = 'assets/ui/ambient.png';
   static const ambientOn = 'assets/ui/ambient_on.png';
   static const cdCase = 'assets/ui/cd_case.png';
+  // Terminal theme (built by ci/make_terminal_assets.py).
+  static const termLogo = 'assets/ui/term_logo.png';
+  static const termSettings = 'assets/ui/term_settings.png';
+  static const termSearch = 'assets/ui/term_search.png';
+  static const termBar = 'assets/ui/term_bar.png';
+  static const termPlay = 'assets/ui/term_play.png';
+  static const termPause = 'assets/ui/term_pause.png';
+  static const termPrev = 'assets/ui/term_prev.png';
+  static const termNext = 'assets/ui/term_next.png';
+  static const termLoop = 'assets/ui/term_loop.png';
+  static const termShuffle = 'assets/ui/term_shuffle.png';
+  static const termEq = 'assets/ui/term_eq.png';
+  static const termAmbient = 'assets/ui/term_ambient.png';
+  static const termTv = 'assets/ui/term_tv.png';
+  static const termPlayhead = 'assets/ui/term_playhead.png';
   // dot Studios logo in the Settings footer (black and white versions).
   static const dotLogo = 'assets/ui/dot_logo.png';
   static const dotLogoDark = 'assets/ui/dot_logo_dark.png';
@@ -40,6 +55,9 @@ class UiAssets {
   static const all = [
     play, pause, prev, next, minimize, equalizer, panel,
     loop, shuffle, settings, search, logo, logoDark, ambient, ambientOn, cdCase,
+    termLogo, termSettings, termSearch, termBar, termPlay, termPause,
+    termPrev, termNext, termLoop, termShuffle, termEq, termAmbient, termTv,
+    termPlayhead,
   ];
 
   /// Decodes every UI image up front so nothing pops in on first use.

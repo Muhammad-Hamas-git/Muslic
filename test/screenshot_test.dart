@@ -26,6 +26,7 @@ import 'package:muslic/state/library_controller.dart';
 import 'package:muslic/state/player_controller.dart';
 import 'package:muslic/state/settings_controller.dart';
 import 'package:muslic/widgets/equalizer_panel.dart';
+import 'package:muslic/widgets/crt.dart';
 import 'package:muslic/widgets/xmb_background.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -193,6 +194,7 @@ void main() {
     NavSound.enabled = false;
     Haptics.enabled = false;
     XmbBackground.animate = false;
+    Crt.animate = false;
     await _loadFonts();
     SharedPreferences.setMockInitialValues({});
     final messenger =
@@ -495,5 +497,38 @@ void main() {
     DevValues.resetAll();
     expect(DevValues.checkPassword('hammas123'), isTrue);
     expect(DevValues.checkPassword('nope'), isFalse);
+  });
+
+  testWidgets('Terminal library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.terminal);
+    await shot(tester, '25_terminal_library');
+  });
+
+  testWidgets('Terminal player pulled out', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.terminal);
+    await tester.tapAt(const Offset(150, 712));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await shot(tester, '26_terminal_opening');
+    await settle(tester);
+    await shot(tester, '27_terminal_player');
+    // Swipe the horizontal carousel to the next song.
+    await tester.flingFrom(const Offset(250, 300), const Offset(-150, 0), 1200);
+    await settle(tester);
+    await shot(tester, '28_terminal_swiped');
+  });
+
+  testWidgets('Terminal equalizer on the TV', (tester) async {
+    await pumpApp(tester, const LibraryScreen(), style: AppStyle.terminal);
+    await tester.tapAt(const Offset(150, 712));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await settle(tester);
+    await shot(tester, '29_terminal_equalizer');
+  });
+
+  testWidgets('Terminal settings', (tester) async {
+    await pumpApp(tester, const SettingsScreen(), style: AppStyle.terminal);
+    await shot(tester, '30_terminal_settings');
   });
 }

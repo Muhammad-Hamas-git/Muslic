@@ -6,10 +6,11 @@ enum LibrarySort { artist, name, dateModified }
 /// Light or dark mode. Add new ones here and in lib/ui/skin.dart.
 enum AppTheme { light, dark }
 
-/// Look of the app: the plain Classic look, or XMB (animated wave and
-/// particles behind everything, like the PlayStation 3 menu). Each works
-/// with [AppTheme] light and dark.
-enum AppStyle { classic, xmb }
+/// Look of the app: the plain Classic look, Wave (animated wave and
+/// particles behind everything; stored as "xmb"), or Terminal (green CRT
+/// screen with a TV player). Classic and Wave work with [AppTheme] light
+/// and dark; Terminal has its own look.
+enum AppStyle { classic, xmb, terminal }
 
 /// All user-tunable settings, persisted to SharedPreferences.
 ///

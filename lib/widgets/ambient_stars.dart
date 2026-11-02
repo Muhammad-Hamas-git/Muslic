@@ -88,7 +88,7 @@ class _AmbientStarsState extends State<AmbientStars>
           painter: _StarPainter(
             time: _time,
             show: _show,
-            // XMB has its own sparkles; the stars stay Classic only.
+            // Wave has its own sparkles; the stars stay Classic only.
             opacity: widget.opacity * (1 - Skin.of(context).xmb),
             weight: widget.weight,
           ),

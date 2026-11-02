@@ -65,20 +65,28 @@ class SettingsScreen extends StatelessWidget {
                 _Group(label: 'Appearance', children: [
                   _Row(
                     title: 'Style',
-                    subtitle: settings.style == AppStyle.xmb
-                        ? 'Moving wave and sparkles behind everything'
-                        : 'Plain background',
-                    trailing: _Segmented<AppStyle>(
+                    subtitle: switch (settings.style) {
+                      AppStyle.classic => 'Plain background',
+                      AppStyle.xmb => 'Moving wave and sparkles behind everything',
+                      AppStyle.terminal =>
+                        'Green CRT screen with a TV that slides out',
+                    },
+                    below: _Segmented<AppStyle>(
+                      expand: true,
                       value: settings.style,
                       options: const [
                         (AppStyle.classic, 'Classic'),
-                        (AppStyle.xmb, 'XMB'),
+                        (AppStyle.xmb, 'Wave'),
+                        (AppStyle.terminal, 'Terminal'),
                       ],
                       onChanged: settings.setStyle,
                     ),
                   ),
                   _Row(
                     title: 'Theme',
+                    subtitle: settings.style == AppStyle.terminal
+                        ? 'Terminal is always dark'
+                        : null,
                     trailing: _Segmented<AppTheme>(
                       value: settings.theme,
                       options: const [

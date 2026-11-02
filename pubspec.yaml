@@ -66,6 +66,8 @@ flutter:
     # Font licences, shown on the open-source licences page.
     - assets/fonts/OFL-Inter.txt
     - assets/fonts/OFL-KumbhSans.txt
+    - assets/fonts/OFL-DSEG.txt
+    - assets/fonts/OFL-FiraCode.txt
 
   fonts:
     - family: Inter
@@ -74,3 +76,14 @@ flutter:
     - family: KumbhSans
       fonts:
         - asset: assets/fonts/KumbhSans.ttf
+    # Terminal theme: segment-display titles and the timestamp.
+    - family: DSEG14
+      fonts:
+        - asset: assets/fonts/DSEG14Classic-Regular.ttf
+    - family: FiraCode
+      fonts:
+        - asset: assets/fonts/FiraCode-Regular.ttf
+
+  # GPU effects (Terminal theme CRT screen).
+  shaders:
+    - shaders/crt.frag

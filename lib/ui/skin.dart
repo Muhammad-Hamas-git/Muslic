@@ -10,12 +10,12 @@ import 'design.dart';
 
 /// Colours and images that change with the theme (Settings > Appearance).
 ///
-/// There are four skins: Classic light/dark and XMB light/dark. A Skin can
+/// There are four skins: Classic light/dark and Wave light/dark. A Skin can
 /// sit anywhere between them: [SkinHost] animates it, so switching theme
 /// or style, or turning ambient on with the light theme, fades the whole
 /// app smoothly instead of snapping.
 ///
-/// XMB always uses the dark skin's element colours (white logo, titles,
+/// Wave always uses the dark skin's element colours (white logo, titles,
 /// icons, text); its light/dark mode only changes the background gradient
 /// ([night]) and the player card ([blurDim]).
 class Skin {
@@ -44,14 +44,14 @@ class Skin {
   bool get dark => darkness >= 0.5;
 
   /// The chosen light/dark mode itself, 0..1. Same as [darkness] in
-  /// Classic; in XMB it picks the blue (0) or black (1) background.
+  /// Classic; in Wave it picks the blue (0) or black (1) background.
   final double night;
 
-  /// How much of the XMB background shows, 0 (Classic) to 1 (XMB).
+  /// How much of the Wave background shows, 0 (Classic) to 1 (Wave).
   final double xmb;
 
   /// Strength of the white/black fades at the top and bottom of the
-  /// library (Classic only; XMB lets the background show through).
+  /// library (Classic only; Wave lets the background show through).
   final double edgeFade;
 
   /// Page background (library, settings, behind the open player).
@@ -126,9 +126,9 @@ class Skin {
     field: Color(0xFF1C1C1E),
   );
 
-  /// XMB, light mode: blue background, dark-mode element colours, light
+  /// Wave, light mode: blue background, dark-mode element colours, light
   /// player card. Side covers keep the white wash (Figma "Library Screen
-  /// (XMB)").
+  /// (Wave)").
   static const xmbLightSkin = Skin(
     darkness: 1,
     night: 0,
@@ -148,7 +148,7 @@ class Skin {
     field: Color(0xFF1C1C1E),
   );
 
-  /// XMB, dark mode: black-to-dark-grey background, dark player card.
+  /// Wave, dark mode: black-to-dark-grey background, dark player card.
   static const xmbDarkSkin = Skin(
     darkness: 1,
     night: 1,
@@ -188,17 +188,43 @@ class Skin {
         field: Color.lerp(a.field, b.field, t)!,
       );
 
+  /// Terminal: green phosphor on black, for every screen that is not the
+  /// Terminal library itself (settings, dialogs).
+  static const terminalSkin = Skin(
+    darkness: 1,
+    night: 1,
+    xmb: 0,
+    edgeFade: 0,
+    background: Colors.black,
+    surface: Color(0x1A00FF00),
+    ink: Color(0xFF39FF39),
+    hairline: Color(0x3300FF00),
+    title: Color(0xFF00FF00),
+    artist: Color(0xFF5CFF5C),
+    wash: Colors.white,
+    heroShadow: Colors.white,
+    heroShadowOpacity: 0.25,
+    icon: Color(0xFF00FF00),
+    blurDim: 0.5,
+    field: Color(0xFF0A1A0A),
+  );
+
   static Skin forTheme(AppTheme t, [AppStyle style = AppStyle.classic]) =>
       switch ((style, t)) {
+        (AppStyle.terminal, _) => terminalSkin,
         (AppStyle.classic, AppTheme.light) => lightSkin,
         (AppStyle.classic, AppTheme.dark) => darkSkin,
         (AppStyle.xmb, AppTheme.light) => xmbLightSkin,
         (AppStyle.xmb, AppTheme.dark) => xmbDarkSkin,
       };
 
-  /// Blend of the four skins: [dark] picks light/dark, [xmb] the style.
-  static Skin mix(double dark, double xmb) => lerp(
-      lerp(lightSkin, darkSkin, dark), lerp(xmbLightSkin, xmbDarkSkin, dark), xmb);
+  /// Blend of the skins: [dark] picks light/dark, [xmb] Wave, [terminal]
+  /// Terminal.
+  static Skin mix(double dark, double xmb, [double terminal = 0]) => lerp(
+      lerp(lerp(lightSkin, darkSkin, dark),
+          lerp(xmbLightSkin, xmbDarkSkin, dark), xmb),
+      terminalSkin,
+      terminal);
 
   /// The current (possibly mid-animation) skin.
   static Skin of(BuildContext context) {
@@ -221,12 +247,12 @@ class Skin {
 }
 
 /// How long the light/dark fade takes (theme change or ambient toggle),
-/// and the Classic/XMB cross-fade.
+/// and the Classic/Wave cross-fade.
 const Duration skinFade = Duration(milliseconds: 900);
 
 /// Decides how the app should look and animates towards it: dark when the
-/// theme setting is Dark or while ambient mode is on; XMB when the style
-/// setting is XMB.
+/// theme setting is Dark or while ambient mode is on; Wave when the style
+/// setting is Wave.
 class SkinHost extends StatefulWidget {
   const SkinHost({super.key, required this.builder});
 
@@ -239,13 +265,16 @@ class SkinHost extends StatefulWidget {
 class _SkinHostState extends State<SkinHost> with TickerProviderStateMixin {
   AnimationController? _dark;
   AnimationController? _xmb;
+  AnimationController? _term;
   double? _darkGoal;
   double? _xmbGoal;
+  double? _termGoal;
 
   @override
   void dispose() {
     _dark?.dispose();
     _xmb?.dispose();
+    _term?.dispose();
     super.dispose();
   }
 
@@ -259,8 +288,9 @@ class _SkinHostState extends State<SkinHost> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final (userDark, xmbStyle) = context.select<SettingsController,
-        (bool, bool)>((s) => (s.theme == AppTheme.dark, s.style == AppStyle.xmb));
+    final (userDark, style) = context.select<SettingsController,
+        (bool, AppStyle)>((s) => (s.theme == AppTheme.dark, s.style));
+    final xmbStyle = style == AppStyle.xmb;
     final ambient = context.select<PlayerController, bool>((p) => p.ambient);
     final darkTarget = userDark || ambient ? 1.0 : 0.0;
     final xmbTarget = xmbStyle ? 1.0 : 0.0;
@@ -271,11 +301,15 @@ class _SkinHostState extends State<SkinHost> with TickerProviderStateMixin {
         AnimationController(vsync: this, duration: skinFade, value: xmbTarget);
     _towards(d, darkTarget, _darkGoal, (g) => _darkGoal = g);
     _towards(x, xmbTarget, _xmbGoal, (g) => _xmbGoal = g);
+    final termTarget = style == AppStyle.terminal ? 1.0 : 0.0;
+    final tm = _term ??= AnimationController(
+        vsync: this, duration: skinFade, value: termTarget);
+    _towards(tm, termTarget, _termGoal, (g) => _termGoal = g);
 
     return AnimatedBuilder(
-      animation: Listenable.merge([d, x]),
+      animation: Listenable.merge([d, x, tm]),
       builder: (context, _) {
-        final skin = Skin.mix(d.value, x.value);
+        final skin = Skin.mix(d.value, x.value, tm.value);
         return _SkinScope(skin: skin, child: widget.builder(context, skin));
       },
     );

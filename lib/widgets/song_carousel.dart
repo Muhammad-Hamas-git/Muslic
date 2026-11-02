@@ -32,7 +32,7 @@ class SongCarousel extends StatefulWidget {
   });
 
   /// Called with every scroll movement in px (positive = towards later
-  /// songs), including flings and the restore scroll. Drives the XMB
+  /// songs), including flings and the restore scroll. Drives the Wave
   /// background's parallax.
   final ValueChanged<double>? onScrollDelta;
 

@@ -286,7 +286,7 @@ class _PlayerShellState extends State<PlayerShell>
                     ignoring: t < 0.05,
                     child: t <= 0
                         ? const SizedBox.shrink()
-                        // XMB keeps its animated background visible
+                        // Wave keeps its animated background visible
                         // (the library fades its carousel out instead).
                         : Stack(
                             fit: StackFit.expand,
@@ -320,7 +320,7 @@ class _PlayerShellState extends State<PlayerShell>
                         children: [
                           Positioned.fill(
                             key: const ValueKey('blur'),
-                            // XMB: the blurred art is see-through so the
+                            // Wave: the blurred art is see-through so the
                             // wave shows behind the card. Only the art is
                             // faded; buttons and text stay solid.
                             child: _plainFade(

@@ -295,8 +295,8 @@ class DevValues {
         (v) => FxTuning.fadeMs = v,
         dec: 0, unit: 'ms');
 
-    // XMB background colours.
-    const xc = 'XMB background colours';
+    // Wave background colours.
+    const xc = 'Wave background colours';
     for (var i = 0; i < 3; i++) {
       colour(xc, 'xmb.light$i', 'Light ${i + 1}', XmbTuning.lightGradient, i);
     }
@@ -306,8 +306,8 @@ class DevValues {
     d(xc, 'xmb.gradientMid', 'Middle colour position', 0.05, 0.95,
         () => XmbTuning.gradientMid, (v) => XmbTuning.gradientMid = v);
 
-    // XMB wave.
-    const xw = 'XMB wave';
+    // Wave wave.
+    const xw = 'Wave: the wave';
     d(xw, 'xmb.centre', 'Centre (of width)', -0.2, 1.2,
         () => XmbTuning.centre, (v) => XmbTuning.centre = v);
     d(xw, 'xmb.lean', 'Lean', -0.6, 0.6, () => XmbTuning.lean,
@@ -347,8 +347,8 @@ class DevValues {
     d(xw, 'xmb.depth', 'Depth', 0.02, 1, () => XmbTuning.depth,
         (v) => XmbTuning.depth = v, dec: 3);
 
-    // XMB scrolling.
-    const xs = 'XMB scrolling';
+    // Wave scrolling.
+    const xs = 'Wave scrolling';
     d(xs, 'xmb.waveScroll', 'Wave scroll speed', 0, 1.5,
         () => XmbTuning.waveScroll, (v) => XmbTuning.waveScroll = v);
     d(xs, 'xmb.particleScrollMin', 'Small sparkle scroll speed', 0, 2,
@@ -373,8 +373,8 @@ class DevValues {
     ms(xs, 'xmb.energyDecay', 'Energy calm-down', 100, 5000,
         () => XmbTuning.energyDecay, (v) => XmbTuning.energyDecay = v);
 
-    // XMB sparkles.
-    const xp = 'XMB sparkles';
+    // Wave sparkles.
+    const xp = 'Wave sparkles';
     d(xp, 'xmb.minSize', 'Smallest size', 0.2, 6, () => XmbTuning.minSize,
         (v) => XmbTuning.minSize = v);
     d(xp, 'xmb.maxSize', 'Biggest size', 0.2, 8, () => XmbTuning.maxSize,

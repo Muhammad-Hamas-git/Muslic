@@ -10,8 +10,10 @@ import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../ui/skin.dart';
 import '../widgets/ambient_stars.dart';
+import '../widgets/blend_image.dart';
 import '../widgets/muslic_app_bar.dart';
 import '../widgets/player_shell.dart';
+import '../terminal/terminal_view.dart';
 import '../widgets/song_carousel.dart';
 import '../widgets/xmb_background.dart';
 import 'settings_screen.dart';
@@ -112,22 +114,95 @@ class _LibraryScreenState extends State<LibraryScreen>
     }
 
     final skin = Skin.of(context);
+    final style =
+        context.select<SettingsController, AppStyle>((s) => s.style);
+
+    void onSongPassed({bool beep = false}) {
+      final settings = context.read<SettingsController>();
+      if (settings.scrollSound) NavSound.instance.click(beep: beep);
+      if (settings.scrollHaptics) Haptics.tick();
+      XmbInput.instance.songPassed();
+    }
+
+    final search = AnimatedPositioned(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
+      left: f(60),
+      right: f(60),
+      top: _searching ? appBarBottom + f(10) : appBarBottom - f(40),
+      child: IgnorePointer(
+        ignoring: !_searching,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: _searching ? 1 : 0,
+          child: _SearchField(
+            controller: _searchCtrl,
+            focusNode: _searchFocus,
+            onChanged: library.setSearch,
+          ),
+        ),
+      ),
+    );
+
+    // Terminal theme: its own screen and player.
+    if (style == AppStyle.terminal) {
+      NavSound.instance.preload(beep: true);
+      final ready = library.status == LibraryStatus.ready &&
+          library.tracks.isNotEmpty;
+      return Scaffold(
+        backgroundColor: Colors.black,
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: TerminalView(
+                expansion: _expansion,
+                tracks: library.tracks,
+                hasPlayer: hasPlayer,
+                status: ready
+                    ? null
+                    : _Status(library: library, searching: _searching),
+                onSelect: _onSelect,
+                onSongPassed: () => onSongPassed(beep: true),
+                focusTrackId: _focusTrackId,
+                onSettings: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                onSearch: _toggleSearch,
+                searchIcon: _searching
+                    ? AppBarGlyph(
+                        icon: Icons.close_rounded,
+                        tooltip: 'Close search',
+                        onTap: _toggleSearch,
+                      )
+                    : Bouncy(
+                        onTap: _toggleSearch,
+                        semanticLabel: 'Search',
+                        child: Image.asset(UiAssets.termSearch,
+                            filterQuality: FilterQuality.none),
+                      ),
+              ),
+            ),
+            search,
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: skin.background,
       resizeToAvoidBottomInset: false,
-      // Every touch also reaches the XMB background (it never blocks taps).
+      // Every touch also reaches the Wave background (it never blocks taps).
       body: XmbTouch(
         child: Stack(
         children: [
-          // XMB theme: animated wave and sparkles behind everything.
+          // Wave theme: animated wave and sparkles behind everything.
           if (skin.xmb > 0)
             Positioned.fill(child: XmbBackground(opacity: skin.xmb)),
 
           // Ambient stars behind the carousel.
           const Positioned.fill(child: AmbientStars()),
 
-          // Carousel (or a status message). In XMB there is no solid page
+          // Carousel (or a status message). In Wave there is no solid page
           // behind the open player, so the carousel fades out instead.
           Positioned.fill(
             child: AnimatedBuilder(
@@ -151,12 +226,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                     topBound: appBarBottom,
                     bottomBound: miniTop,
                     onSelect: _onSelect,
-                    onSongPassed: () {
-                      final settings = context.read<SettingsController>();
-                      if (settings.scrollSound) NavSound.instance.click();
-                      if (settings.scrollHaptics) Haptics.tick();
-                      XmbInput.instance.songPassed();
-                    },
+                    onSongPassed: onSongPassed,
                     onScrollDelta: XmbInput.instance.scrolled,
                     focusTrackId: _focusTrackId,
                   )
@@ -233,25 +303,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           ),
 
           // Search field, just under the app bar.
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            left: f(60),
-            right: f(60),
-            top: _searching ? appBarBottom + f(10) : appBarBottom - f(40),
-            child: IgnorePointer(
-              ignoring: !_searching,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _searching ? 1 : 0,
-                child: _SearchField(
-                  controller: _searchCtrl,
-                  focusNode: _searchFocus,
-                  onChanged: library.setSearch,
-                ),
-              ),
-            ),
-          ),
+          search,
         ],
       ),
       ),
@@ -267,7 +319,7 @@ class _Fade extends StatelessWidget {
   Widget build(BuildContext context) {
     // Figma: transparent to white, reaching solid white at 63.5%.
     // (Black in the dark theme.)
-    // None in XMB, where the background shows through.
+    // None in Wave, where the background shows through.
     final skin = Skin.of(context);
     if (skin.edgeFade <= 0) return const SizedBox.shrink();
     final bg = skin.background;
