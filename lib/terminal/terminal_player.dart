@@ -248,7 +248,9 @@ class _Bar extends StatelessWidget {
           44,
           CrtFilter(
             params: TerminalTuning.miniTitle,
-            child: _LcdTitle(text: track.title.toUpperCase()),
+            // DSEG's space is narrow; '!' is its full-width blank.
+            child: _LcdTitle(
+                text: track.title.toUpperCase().replaceAll(' ', '!')),
           ),
         ),
         at(

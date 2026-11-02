@@ -400,7 +400,8 @@ class _Titles extends StatelessWidget {
       child: Stack(
         children: [
           line(
-            text: track.title.toUpperCase(),
+            // DSEG's space is narrow; '!' is its full-width blank.
+            text: track.title.toUpperCase().replaceAll(' ', '!'),
             style: TextStyle(
               fontFamily: 'DSEG14',
               fontSize: titleSize,
