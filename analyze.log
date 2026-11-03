@@ -1,0 +1,41 @@
+Analyzing Muslic...                                             
+
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:21:26 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:107:27 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:110:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:115:30 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:156:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ambient_tuning.dart:157:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:27:31 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:36:39 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:37:42 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:38:38 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:84:29 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:108:28 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:122:25 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:123:26 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/ui_tuning.dart:142:28 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:16:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:17:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:18:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:23:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:24:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:25:5 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:89:33 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:120:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/debug/xmb_tuning.dart:121:32 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/screens/settings_screen.dart:598:17 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/screens/settings_screen.dart:600:26 • prefer_const_constructors
+   info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/widgets.dart'. Try removing the import directive • lib/services/haptics.dart:1:8 • unnecessary_import
+   info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/widgets.dart'. Try removing the import directive • lib/state/player_controller.dart:3:8 • unnecessary_import
+   info • Use 'const' for final variables initialized to a constant value. Try replacing 'final' with 'const' • lib/widgets/xmb_background.dart:520:5 • prefer_const_declarations
+   info • Parameters ''tag' and 'duration'' could be super parameters. Trying converting ''tag' and 'duration'' to super parameters • packages/just_audio/lib/just_audio.dart:2355:3 • use_super_parameters
+   info • Parameters ''uri', 'headers', 'tag', and 'duration'' could be super parameters. Trying converting ''uri', 'headers', 'tag', and 'duration'' to super parameters • packages/just_audio/lib/just_audio.dart:2483:3 • use_super_parameters
+   info • Parameters ''uri', 'headers', 'tag', and 'duration'' could be super parameters. Trying converting ''uri', 'headers', 'tag', and 'duration'' to super parameters • packages/just_audio/lib/just_audio.dart:2510:3 • use_super_parameters
+   info • Parameter 'tag' could be a super parameter. Trying converting 'tag' to a super parameter • packages/just_audio/lib/just_audio.dart:2533:3 • use_super_parameters
+   info • Parameters ''tag' and 'duration'' could be super parameters. Trying converting ''tag' and 'duration'' to super parameters • packages/just_audio/lib/just_audio.dart:2775:3 • use_super_parameters
+   info • Parameter 'tag' could be a super parameter. Trying converting 'tag' to a super parameter • packages/just_audio/lib/just_audio.dart:2839:3 • use_super_parameters
+   info • Parameter 'tag' could be a super parameter. Trying converting 'tag' to a super parameter • packages/just_audio/lib/just_audio.dart:2924:3 • use_super_parameters
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart'. Try removing the import directive • test/screenshot_test.dart:7:8 • unnecessary_import
+
+37 issues found. (ran in 9.9s)

@@ -1,0 +1,224 @@
+== Dart packages (116)
+NO LICENSE FILE  flutter_test                             dev only
+NO LICENSE FILE  flutter_web_plugins                      app  <-- CHECK
+UNKNOWN          muslic                                   dev only
+Apache-2.0       clock                                    app
+Apache-2.0       fake_async                               dev only
+Apache-2.0       just_audio                               app
+Apache-2.0       material_color_utilities                 app
+Apache-2.0       rxdart                                   app
+Apache-2.0       sky_engine                               app
+BSD-2-Clause     sqflite                                  app
+BSD-2-Clause     sqflite_android                          app
+BSD-2-Clause     sqflite_common                           app
+BSD-2-Clause     sqflite_darwin                           app
+BSD-2-Clause     sqflite_platform_interface               app
+BSD-3-Clause     args                                     app
+BSD-3-Clause     async                                    app
+BSD-3-Clause     boolean_selector                         dev only
+BSD-3-Clause     characters                               app
+BSD-3-Clause     checked_yaml                             dev only
+BSD-3-Clause     cli_util                                 dev only
+BSD-3-Clause     code_assets                              app
+BSD-3-Clause     collection                               app
+BSD-3-Clause     cross_file                               app
+BSD-3-Clause     crypto                                   app
+BSD-3-Clause     fading_edge_scrollview                   app
+BSD-3-Clause     ffi                                      app
+BSD-3-Clause     file                                     app
+BSD-3-Clause     fixnum                                   app
+BSD-3-Clause     flutter                                  app
+BSD-3-Clause     flutter_lints                            dev only
+BSD-3-Clause     flutter_plugin_android_lifecycle         app
+BSD-3-Clause     hooks                                    app
+BSD-3-Clause     http                                     app
+BSD-3-Clause     http_parser                              app
+BSD-3-Clause     jni                                      app
+BSD-3-Clause     jni_flutter                              app
+BSD-3-Clause     jni_util                                 app
+BSD-3-Clause     js                                       app
+BSD-3-Clause     json_annotation                          dev only
+BSD-3-Clause     leak_tracker                             dev only
+BSD-3-Clause     leak_tracker_flutter_testing             dev only
+BSD-3-Clause     leak_tracker_testing                     dev only
+BSD-3-Clause     lints                                    dev only
+BSD-3-Clause     logging                                  app
+BSD-3-Clause     matcher                                  dev only
+BSD-3-Clause     meta                                     app
+BSD-3-Clause     objective_c                              app
+BSD-3-Clause     on_audio_query                           app
+BSD-3-Clause     on_audio_query_android                   app
+BSD-3-Clause     on_audio_query_ios                       app
+BSD-3-Clause     on_audio_query_platform_interface        app
+BSD-3-Clause     on_audio_query_web                       app
+BSD-3-Clause     package_config                           app
+BSD-3-Clause     path                                     app
+BSD-3-Clause     path_provider                            app
+BSD-3-Clause     path_provider_android                    app
+BSD-3-Clause     path_provider_foundation                 app
+BSD-3-Clause     path_provider_linux                      app
+BSD-3-Clause     path_provider_platform_interface         app
+BSD-3-Clause     path_provider_windows                    app
+BSD-3-Clause     platform                                 app
+BSD-3-Clause     plugin_platform_interface                app
+BSD-3-Clause     pub_semver                               app
+BSD-3-Clause     record_use                               app
+BSD-3-Clause     shared_preferences                       app
+BSD-3-Clause     shared_preferences_android               app
+BSD-3-Clause     shared_preferences_foundation            app
+BSD-3-Clause     shared_preferences_linux                 app
+BSD-3-Clause     shared_preferences_platform_interface    app
+BSD-3-Clause     shared_preferences_web                   app
+BSD-3-Clause     shared_preferences_windows               app
+BSD-3-Clause     source_span                              app
+BSD-3-Clause     stack_trace                              dev only
+BSD-3-Clause     stream_channel                           dev only
+BSD-3-Clause     string_scanner                           app
+BSD-3-Clause     term_glyph                               app
+BSD-3-Clause     test_api                                 dev only
+BSD-3-Clause     typed_data                               app
+BSD-3-Clause     vector_math                              app
+BSD-3-Clause     vm_service                               dev only
+BSD-3-Clause     web                                      app
+BSD-3-Clause     win32                                    app
+BSD-3-Clause     xdg_directories                          app
+MIT              archive                                  app
+MIT              audio_service                            app
+MIT              audio_service_platform_interface         app
+MIT              audio_service_web                        app
+MIT              audio_session                            app
+MIT              audioplayers                             app
+MIT              audioplayers_android                     app
+MIT              audioplayers_darwin                      app
+MIT              audioplayers_linux                       app
+MIT              audioplayers_platform_interface          app
+MIT              audioplayers_web                         app
+MIT              audioplayers_windows                     app
+MIT              file_picker                              app
+MIT              flutter_cache_manager                    app
+MIT              flutter_launcher_icons                   dev only
+MIT              id3                                      app
+MIT              image                                    app
+MIT              just_audio_background                    app
+MIT              just_audio_platform_interface            app
+MIT              just_audio_web                           app
+MIT              marquee                                  app
+MIT              nested                                   app
+MIT              permission_handler                       app
+MIT              permission_handler_android               app
+MIT              permission_handler_apple                 app
+MIT              permission_handler_html                  app
+MIT              permission_handler_platform_interface    app
+MIT              permission_handler_windows               app
+MIT              posix                                    app
+MIT              provider                                 app
+MIT              synchronized                             app
+MIT              uuid                                     app
+MIT              yaml                                     app
+
+== Shipped in the app, by licence: Apache-2.0: 5, BSD-2-Clause: 5, BSD-3-Clause: 55, MIT: 32, NO LICENSE FILE: 1
+
+== Android libraries in the release app (group:artifact)
+androidx.activity:activity
+androidx.activity:activity-ktx
+androidx.annotation:annotation
+androidx.annotation:annotation-experimental
+androidx.annotation:annotation-jvm
+androidx.appcompat:appcompat
+androidx.appcompat:appcompat-resources
+androidx.arch.core:core-common
+androidx.arch.core:core-runtime
+androidx.asynclayoutinflater:asynclayoutinflater
+androidx.collection:collection
+androidx.collection:collection-ktx
+androidx.concurrent:concurrent-futures
+androidx.coordinatorlayout:coordinatorlayout
+androidx.core:core
+androidx.core:core-ktx
+androidx.cursoradapter:cursoradapter
+androidx.customview:customview
+androidx.datastore:datastore
+androidx.datastore:datastore-android
+androidx.datastore:datastore-core
+androidx.datastore:datastore-core-android
+androidx.datastore:datastore-core-okio
+androidx.datastore:datastore-core-okio-jvm
+androidx.datastore:datastore-preferences
+androidx.datastore:datastore-preferences-android
+androidx.datastore:datastore-preferences-core
+androidx.datastore:datastore-preferences-core-android
+androidx.datastore:datastore-preferences-external-protobuf
+androidx.datastore:datastore-preferences-proto
+androidx.documentfile:documentfile
+androidx.drawerlayout:drawerlayout
+androidx.exifinterface:exifinterface
+androidx.fragment:fragment
+androidx.fragment:fragment-ktx
+androidx.interpolator:interpolator
+androidx.legacy:legacy-support-core-ui
+androidx.legacy:legacy-support-core-utils
+androidx.lifecycle:lifecycle-common
+androidx.lifecycle:lifecycle-common-java8
+androidx.lifecycle:lifecycle-livedata
+androidx.lifecycle:lifecycle-livedata-core
+androidx.lifecycle:lifecycle-livedata-core-ktx
+androidx.lifecycle:lifecycle-process
+androidx.lifecycle:lifecycle-runtime
+androidx.lifecycle:lifecycle-runtime-ktx
+androidx.lifecycle:lifecycle-viewmodel
+androidx.lifecycle:lifecycle-viewmodel-ktx
+androidx.lifecycle:lifecycle-viewmodel-savedstate
+androidx.loader:loader
+androidx.localbroadcastmanager:localbroadcastmanager
+androidx.media3:media3-common
+androidx.media3:media3-container
+androidx.media3:media3-database
+androidx.media3:media3-datasource
+androidx.media3:media3-decoder
+androidx.media3:media3-exoplayer
+androidx.media3:media3-exoplayer-dash
+androidx.media3:media3-exoplayer-hls
+androidx.media3:media3-exoplayer-smoothstreaming
+androidx.media3:media3-extractor
+androidx.media:media
+androidx.preference:preference
+androidx.print:print
+androidx.profileinstaller:profileinstaller
+androidx.recyclerview:recyclerview
+androidx.savedstate:savedstate
+androidx.savedstate:savedstate-ktx
+androidx.slidingpanelayout:slidingpanelayout
+androidx.startup:startup-runtime
+androidx.swiperefreshlayout:swiperefreshlayout
+androidx.tracing:tracing
+androidx.transition:transition
+androidx.vectordrawable:vectordrawable
+androidx.vectordrawable:vectordrawable-animated
+androidx.versionedparcelable:versionedparcelable
+androidx.viewpager:viewpager
+androidx.window.extensions.core:core
+androidx.window:window
+androidx.window:window-java
+com.getkeepsafe.relinker:relinker
+com.google.guava:failureaccess
+com.google.guava:guava
+com.google.guava:listenablefuture
+com.squareup.okio:okio
+com.squareup.okio:okio-jvm
+io.flutter:arm64_v8a_release
+io.flutter:armeabi_v7a_release
+io.flutter:flutter_embedding_release
+io.flutter:x86_64_release
+org.jetbrains.kotlin:kotlin-stdlib
+org.jetbrains.kotlin:kotlin-stdlib-jdk7
+org.jetbrains.kotlinx:kotlinx-coroutines-android
+org.jetbrains.kotlinx:kotlinx-coroutines-bom
+org.jetbrains.kotlinx:kotlinx-coroutines-core
+org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm
+org.jetbrains.kotlinx:kotlinx-serialization-bom
+org.jetbrains.kotlinx:kotlinx-serialization-core
+org.jetbrains.kotlinx:kotlinx-serialization-core-jvm
+org.jetbrains.kotlinx:kotlinx-serialization-json
+org.jetbrains.kotlinx:kotlinx-serialization-json-jvm
+org.jetbrains:annotations
+org.jspecify:jspecify

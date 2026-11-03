@@ -1,0 +1,43 @@
+
+::group::✅ Passing tests
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: artist in title replaces any artist tag
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: brackets removed, artist kept when title has no dash
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: release notes after a dash are dropped, not used as titles
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: track numbers are dropped
+✅ /home/runner/work/Muslic/Muslic/test/title_cleaner_test.dart: unspaced hyphens and all-bracket titles are left alone
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: library with mini player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: expanded player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: equalizer open
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: carousel scrolled by one song
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: player halfway through opening
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: equalizer halfway through opening
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: dark library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: ambient on with the light theme turns the app dark
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: dark equalizer
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: settings light
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: settings dark
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: equalizer with ambient on
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: ambient stars on the library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: dragging the mini player up by hand follows the finger
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: swiping the art changes song
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB light library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB light player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB dark library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB dark player
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB settings
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: XMB wave reacts to a touch
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: developer settings screen
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: settings footer and developer entry
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: carousel keeps its place when the player opens (XMB)
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: developer values export and import round trip
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal player pulled out
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal equalizer on the TV
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal settings
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal Amber library
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal Amber equalizer on the TV
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Terminal Amber settings
+✅ /home/runner/work/Muslic/Muslic/test/screenshot_test.dart: Switching into Terminal picks Phosphor
+::endgroup::
+
+🎉 38 tests passed.

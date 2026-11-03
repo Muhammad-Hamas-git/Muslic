@@ -1,0 +1,48 @@
+== Badging (universal APK)
+package: name='com.dotstudios.muslic' versionCode='37' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+minSdkVersion:'24'
+targetSdkVersion:'36'
+uses-permission: name='android.permission.READ_MEDIA_AUDIO'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.VIBRATE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='com.dotstudios.muslic.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+application-label:'müslic'
+launchable-activity: name='com.ryanheise.audioservice.AudioServiceActivity'  label='' icon=''
+
+== Notification icons kept by the resource shrinker (all 8 must be listed)
+drawable/audio_service_fast_forward
+drawable/audio_service_fast_rewind
+drawable/audio_service_pause
+drawable/audio_service_play_arrow
+drawable/audio_service_skip_next
+drawable/audio_service_skip_previous
+drawable/audio_service_stop
+drawable/ic_stat_muslic
+
+== APK signature
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+
+== AAB signature
+Owner: C=US, O=Android, CN=Android Debug
+	 SHA256: 0E:73:8E:11:F0:73:0F:CD:5B:8D:6B:58:25:7C:7D:CC:C3:FB:B5:AF:05:F3:0C:8D:4F:1A:8D:47:5D:9D:ED:8A
+
+== 16 KB page alignment (Play requirement for Android 15+)
+Verification successful
+
+== Sizes
+total 147400
+drwxr-xr-x  2 runner runner     4096 Nov  3 10:39 .
+drwxrwxrwt 24 root   root      12288 Nov  3 10:39 ..
+-rw-r--r--  1 runner runner 24322239 Nov  3 10:39 muslic-arm64.apk
+-rw-r--r--  1 runner runner 64005421 Nov  3 10:38 muslic-universal.apk
+-rw-r--r--  1 runner runner 62582822 Nov  3 10:38 muslic.aab
