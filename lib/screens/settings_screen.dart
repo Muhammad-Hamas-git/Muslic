@@ -82,18 +82,31 @@ class SettingsScreen extends StatelessWidget {
                       onChanged: settings.setStyle,
                     ),
                   ),
-                  _Row(
-                    title: 'Theme',
-                    subtitle: settings.style == AppStyle.terminal
-                        ? 'Terminal is always dark'
-                        : null,
-                    trailing: _Segmented<AppTheme>(
-                      value: settings.theme,
-                      options: const [
-                        (AppTheme.light, 'Light'),
-                        (AppTheme.dark, 'Dark'),
-                      ],
-                      onChanged: settings.setTheme,
+                  // Terminal has no light/dark; its two colour sets
+                  // take the place of the theme choice.
+                  if (settings.style == AppStyle.terminal)
+                    _Row(
+                      title: 'Theme',
+                      trailing: _Segmented<TerminalTint>(
+                        value: settings.terminalTint,
+                        options: const [
+                          (TerminalTint.phosphor, 'Phosphor'),
+                          (TerminalTint.amber, 'Amber'),
+                        ],
+                        onChanged: settings.setTerminalTint,
+                      ),
+                    )
+                  else
+                    _Row(
+                      title: 'Theme',
+                      trailing: _Segmented<AppTheme>(
+                        value: settings.theme,
+                        options: const [
+                          (AppTheme.light, 'Light'),
+                          (AppTheme.dark, 'Dark'),
+                        ],
+                        onChanged: settings.setTheme,
+                      ),
                     ),
                   ),
                   _SwitchRow(
@@ -110,8 +123,8 @@ class SettingsScreen extends StatelessWidget {
                       onChanged: settings.setButtonSounds,
                     ),
                   _SwitchRow(
-                    title: 'Scroll vibration',
-                    subtitle: 'A light tick as songs pass in the carousel',
+                    title: 'Vibration',
+                    subtitle: 'A light tick on buttons and as songs pass',
                     value: settings.scrollHaptics,
                     onChanged: (v) {
                       settings.setScrollHaptics(v);
@@ -597,7 +610,12 @@ class _Row extends StatelessWidget {
     if (onTap == null) return content;
     return Material(
       type: MaterialType.transparency,
-      child: InkWell(onTap: onTap, child: content),
+      child: InkWell(
+          onTap: () {
+            Haptics.button(context);
+            onTap!();
+          },
+          child: content),
     );
   }
 }
@@ -624,7 +642,10 @@ class _SwitchRow extends StatelessWidget {
       onTap: () => onChanged(!value),
       trailing: Switch(
         value: value,
-        onChanged: onChanged,
+        onChanged: (v) {
+          Haptics.button(context);
+          onChanged(v);
+        },
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         thumbColor: WidgetStateProperty.resolveWith((s) =>
             s.contains(WidgetState.selected)
@@ -699,7 +720,10 @@ class _Segmented<T> extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => onChanged(v),
+                      onTap: () {
+                        Haptics.button(context);
+                        onChanged(v);
+                      },
                       child: Center(
                         child: Text(label,
                             style: Txt.inter(

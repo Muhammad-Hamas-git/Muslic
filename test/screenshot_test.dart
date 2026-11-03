@@ -215,6 +215,7 @@ void main() {
   Future<void> pumpApp(WidgetTester tester, Widget home,
       {AppTheme theme = AppTheme.light,
       AppStyle style = AppStyle.classic,
+      TerminalTint tint = TerminalTint.phosphor,
       bool ambient = false}) async {
     debugDisableShadows = false; // reset in shot()
     tester.view.physicalSize = const Size(1080, 2340);
@@ -240,7 +241,8 @@ void main() {
         ChangeNotifierProvider(
             create: (_) => SettingsController(prefs)
               ..theme = theme
-              ..style = style),
+              ..style = style
+              ..terminalTint = tint),
         ChangeNotifierProvider<LibraryController>(create: (_) => FakeLibrary()),
         ChangeNotifierProvider<PlayerController>(
             create: (_) => FakePlayer()..ambient = ambient),
@@ -532,5 +534,37 @@ void main() {
   testWidgets('Terminal settings', (tester) async {
     await pumpApp(tester, const SettingsScreen(), style: AppStyle.terminal);
     await shot(tester, '30_terminal_settings');
+  });
+
+  testWidgets('Terminal Amber library', (tester) async {
+    await pumpApp(tester, const LibraryScreen(),
+        style: AppStyle.terminal, tint: TerminalTint.amber);
+    await shot(tester, '31_amber_library');
+  });
+
+  testWidgets('Terminal Amber equalizer on the TV', (tester) async {
+    await pumpApp(tester, const LibraryScreen(),
+        style: AppStyle.terminal, tint: TerminalTint.amber);
+    await tester.tapAt(const Offset(150, 712));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Equalizer'));
+    await settle(tester);
+    await shot(tester, '32_amber_equalizer');
+  });
+
+  testWidgets('Terminal Amber settings', (tester) async {
+    await pumpApp(tester, const SettingsScreen(),
+        style: AppStyle.terminal, tint: TerminalTint.amber);
+    await shot(tester, '33_amber_settings');
+  });
+
+  test('Switching into Terminal picks Phosphor', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = SettingsController(await SharedPreferences.getInstance());
+    s.setStyle(AppStyle.terminal);
+    s.setTerminalTint(TerminalTint.amber);
+    s.setStyle(AppStyle.xmb);
+    s.setStyle(AppStyle.terminal);
+    expect(s.terminalTint, TerminalTint.phosphor);
   });
 }

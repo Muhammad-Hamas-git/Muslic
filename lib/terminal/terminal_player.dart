@@ -16,6 +16,7 @@ import '../widgets/blend_image.dart';
 import '../widgets/crt.dart';
 import '../widgets/equalizer_panel.dart';
 import 'mech_sound.dart';
+import 'term_tint.dart';
 import 'terminal_layout.dart';
 
 /// The Terminal theme's player: the bar at the bottom and the TV that
@@ -444,12 +445,7 @@ class _Tv extends StatelessWidget {
                       child: CrtFilter(
                         params: TerminalTuning.tvEqualizer,
                         child: ColorFiltered(
-                          colorFilter: const ColorFilter.matrix(<double>[
-                            0.0213, 0.0715, 0.0072, 0, 0, //
-                            0.2126, 0.7152, 0.0722, 0, 0, //
-                            0.0213, 0.0715, 0.0072, 0, 0, //
-                            0, 0, 0, 1, 0,
-                          ]),
+                          colorFilter: TermTint.mono(),
                           child: const EqualizerPanel(showPanel: false),
                         ),
                       ),

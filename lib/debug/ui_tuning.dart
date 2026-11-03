@@ -78,7 +78,7 @@ class ButtonTuning {
   ButtonTuning._();
 
   /// Size while pressed (1.0 = no change).
-  static double pressedScale = 0.6;
+  static double pressedScale = 0.85;
 
   /// How fast the button dips when pressed.
   static Duration pressIn = Duration(milliseconds: 90);

@@ -70,22 +70,42 @@ class TerminalTuning {
 
   // ---- Colours ---------------------------------------------------------
 
-  /// Song titles, timestamps and other glowing text.
-  static Color phosphor = const Color(0xFF00FF00);
+  /// Phosphor (green) or Amber (orange): Settings > Theme while Terminal
+  /// is the style. Set by the library screen from the setting.
+  static bool amber = false;
 
-  /// Artist name.
-  static Color artist = const Color(0xFF5CFF5C);
+  /// Green phosphor: glowing text, artist name, the background gradient's
+  /// bottom colour (green 7, 123, 7 at 25% over black) and the title glow.
+  static TerminalPalette phosphorColours = TerminalPalette(
+    text: const Color(0xFF00FF00),
+    artist: const Color(0xFF5CFF5C),
+    gradient: const Color(0x40077B07),
+    glow: const Color(0xAA077B07),
+  );
 
-  /// Background gradient: black at the top to green (7, 123, 7) at 25%
-  /// over black, reached at [gradientEnd] of the height (library: half way
-  /// down; the open player: the bottom).
-  static Color gradientBottom = const Color(0x40077B07);
+  /// Amber phosphor, like an old orange monochrome monitor.
+  static TerminalPalette amberColours = TerminalPalette(
+    text: const Color(0xFFFFA733),
+    artist: const Color(0xFFFFD9A0),
+    gradient: const Color(0x40B8730A),
+    glow: const Color(0xAAB8730A),
+  );
+
+  static TerminalPalette get colours => amber ? amberColours : phosphorColours;
+
+  /// Song titles, timestamps, icons and other glowing things.
+  static Color get phosphor => colours.text;
+  static Color get artist => colours.artist;
+  static Color get gradientBottom => colours.gradient;
+  static Color get titleGlow => colours.glow;
+
+  /// Where the background gradient reaches its bottom colour (library:
+  /// half way down; the open player: the bottom).
   static double gradientEndLibrary = 0.5;
   static double gradientEndPlayer = 1.0;
 
-  /// Soft green glow behind the big song title.
-  static Color titleGlow = const Color(0xAA077B07);
-  static double titleGlowBlur = 40;
+  /// Size of the soft glow behind the big song title.
+  static double titleGlowBlur = 120;
 
   // ---- CRT presets ----------------------------------------------------
   // Started from the Figma frames, then softened for comfortable viewing:
@@ -94,8 +114,8 @@ class TerminalTuning {
 
   /// The whole screen behind the player.
   static CrtParams screen = CrtParams(
-      scanlines: 12, scanlineSize: 6, mask: 12, maskPitch: 4,
-      aberration: 16, flicker: 22, noise: 8, rollSpeed: 2, jitter: 1.5);
+      scanlines: 12, scanlineSize: 10, mask: 35, maskPitch: 4,
+      aberration: 30, flicker: 50, noise: 8, rollSpeed: 2, jitter: 40.4);
 
   /// Album art in the player bar's little screen.
   static CrtParams miniArt = CrtParams(
@@ -105,8 +125,9 @@ class TerminalTuning {
 
   /// Song title in the player bar.
   static CrtParams miniTitle = CrtParams(
-      scanlines: 12, scanlineSize: 5, mask: 10, maskPitch: 3,
-      aberration: 40, flicker: 25, noise: 8, rollSpeed: 2, jitter: 10);
+      scanlines: 25, scanlineSize: 5, mask: 34, maskPitch: 5.8,
+      aberration: 66, flicker: 31, noise: 8, rollSpeed: 2, jitter: 23.7,
+      vignette: 14);
 
   /// "0:50 / 5:14" in the player bar.
   static CrtParams miniTime = CrtParams(
@@ -152,5 +173,19 @@ class TerminalTuning {
 
   /// Mechanical click when a player or TV button goes down and comes back
   /// up (two different sounds), 0..1.
-  static double buttonSoundVolume = 0.7;
+  static double buttonSoundVolume = 0.9;
+}
+
+/// One Terminal colour set (see [TerminalTuning.phosphorColours]).
+class TerminalPalette {
+  TerminalPalette({
+    required this.text,
+    required this.artist,
+    required this.gradient,
+    required this.glow,
+  });
+  Color text;
+  Color artist;
+  Color gradient;
+  Color glow;
 }

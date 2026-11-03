@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 
 import '../debug/ui_tuning.dart';
+import '../state/settings_controller.dart';
 
 /// Short vibration ticks for the carousel. Plays through the app's own
 /// Android channel (MuslicFx.java) because Flutter's HapticFeedback cannot
@@ -29,5 +32,16 @@ class Haptics {
     }).catchError((Object e) {
       debugPrint('müslic: haptic failed: $e');
     });
+  }
+
+  /// A tick for a button press, if Settings > Vibration is on.
+  static void button(BuildContext context) {
+    bool on;
+    try {
+      on = context.read<SettingsController>().scrollHaptics;
+    } catch (_) {
+      on = false; // no settings above (some tests)
+    }
+    if (on) tick(force: true);
   }
 }

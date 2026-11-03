@@ -12,6 +12,9 @@ enum AppTheme { light, dark }
 /// and dark; Terminal has its own look.
 enum AppStyle { classic, xmb, terminal }
 
+/// Terminal's two colour sets (it has no light/dark mode).
+enum TerminalTint { phosphor, amber }
+
 /// All user-tunable settings, persisted to SharedPreferences.
 ///
 /// Library filters:
@@ -40,6 +43,7 @@ class SettingsController extends ChangeNotifier {
   bool tidyTitles = true; // shorten "Artist - Song (Official Video)" style names
   AppTheme theme = AppTheme.light;
   AppStyle style = AppStyle.classic;
+  TerminalTint terminalTint = TerminalTint.phosphor;
   bool scrollSound = true; // click when the carousel passes a song
   bool buttonSounds = true; // Terminal: mechanical press/release clicks
   bool scrollHaptics = true; // tick of vibration as songs pass
@@ -78,6 +82,9 @@ class SettingsController extends ChangeNotifier {
         AppTheme.light;
     style = AppStyle.values.asNameMap()[_prefs.getString('style')] ??
         AppStyle.classic;
+    terminalTint =
+        TerminalTint.values.asNameMap()[_prefs.getString('terminalTint')] ??
+            TerminalTint.phosphor;
     scrollSound = _prefs.getBool('scrollSound') ?? true;
     scrollHaptics = _prefs.getBool('scrollHaptics') ?? true;
     buttonSounds = _prefs.getBool('buttonSounds') ?? true;
@@ -110,6 +117,7 @@ class SettingsController extends ChangeNotifier {
     await _prefs.setBool('tidyTitles', tidyTitles);
     await _prefs.setString('theme', theme.name);
     await _prefs.setString('style', style.name);
+    await _prefs.setString('terminalTint', terminalTint.name);
     await _prefs.setBool('scrollSound', scrollSound);
     await _prefs.setBool('scrollHaptics', scrollHaptics);
     await _prefs.setBool('buttonSounds', buttonSounds);
@@ -189,7 +197,16 @@ class SettingsController extends ChangeNotifier {
   }
 
   void setStyle(AppStyle v) {
+    // Coming to Terminal from another style always starts on Phosphor.
+    if (v == AppStyle.terminal && style != AppStyle.terminal) {
+      terminalTint = TerminalTint.phosphor;
+    }
     style = v;
+    _commit();
+  }
+
+  void setTerminalTint(TerminalTint v) {
+    terminalTint = v;
     _commit();
   }
 

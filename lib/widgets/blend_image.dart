@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
 import '../debug/ui_tuning.dart';
+import '../services/haptics.dart';
 
 /// Paints an asset image with a layer blend mode, like Figma's
 /// "Layer > Screen". Flutter's Image widget cannot do this (its blend mode
@@ -197,7 +198,10 @@ class _BouncyState extends State<Bouncy> with SingleTickerProviderStateMixin {
       label: widget.semanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _down(),
+        onTapDown: (_) {
+          Haptics.button(context);
+          _down();
+        },
         onTapCancel: _release,
         onTapUp: (_) => _release(),
         onTap: widget.onTap,

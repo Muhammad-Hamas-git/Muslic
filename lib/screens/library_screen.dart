@@ -13,6 +13,7 @@ import '../widgets/ambient_stars.dart';
 import '../widgets/blend_image.dart';
 import '../widgets/muslic_app_bar.dart';
 import '../widgets/player_shell.dart';
+import '../terminal/term_tint.dart';
 import '../terminal/terminal_view.dart';
 import '../widgets/song_carousel.dart';
 import '../widgets/xmb_background.dart';
@@ -178,8 +179,10 @@ class _LibraryScreenState extends State<LibraryScreen>
                     : Bouncy(
                         onTap: _toggleSearch,
                         semanticLabel: 'Search',
-                        child: Image.asset(UiAssets.termSearch,
-                            filterQuality: FilterQuality.none),
+                        child: TermTint(
+                          child: Image.asset(UiAssets.termSearch,
+                              filterQuality: FilterQuality.none),
+                        ),
                       ),
               ),
             ),

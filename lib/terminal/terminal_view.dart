@@ -1,13 +1,16 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../debug/terminal_tuning.dart';
 import '../models/track.dart';
+import '../state/settings_controller.dart';
 import '../ui/design.dart';
 import '../widgets/blend_image.dart';
 import '../widgets/crt.dart';
 import 'mech_sound.dart';
+import 'term_tint.dart';
 import 'terminal_carousel.dart';
 import 'terminal_layout.dart';
 import 'terminal_player.dart';
@@ -48,6 +51,11 @@ class TerminalView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild everything when Phosphor/Amber changes (SkinHost above has
+    // already set TerminalTuning.amber for this frame).
+    try {
+      context.select<SettingsController, TerminalTint>((s) => s.terminalTint);
+    } catch (_) {}
     final l = TerminalLayout(context);
     final f = l.f;
 
@@ -89,7 +97,8 @@ class TerminalView extends StatelessWidget {
           top: l.top(55),
           width: f(285),
           height: f(119),
-          child: Image.asset(UiAssets.termLogo, fit: BoxFit.contain),
+          child: TermTint(
+              child: Image.asset(UiAssets.termLogo, fit: BoxFit.contain)),
         ),
         Positioned(
           left: f(60),
@@ -100,8 +109,10 @@ class TerminalView extends StatelessWidget {
             child: Bouncy(
               onTap: onSettings,
               semanticLabel: 'Settings',
-              child: Image.asset(UiAssets.termSettings,
-                  filterQuality: FilterQuality.none),
+              child: TermTint(
+                child: Image.asset(UiAssets.termSettings,
+                    filterQuality: FilterQuality.none),
+              ),
             ),
           ),
         ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../debug/terminal_tuning.dart';
 import '../state/player_controller.dart';
 import '../state/settings_controller.dart';
 import 'design.dart';
@@ -209,9 +210,32 @@ class Skin {
     field: Color(0xFF0A1A0A),
   );
 
-  static Skin forTheme(AppTheme t, [AppStyle style = AppStyle.classic]) =>
+  /// Terminal in Amber: orange phosphor on black.
+  static const terminalAmberSkin = Skin(
+    darkness: 1,
+    night: 1,
+    xmb: 0,
+    edgeFade: 0,
+    background: Colors.black,
+    surface: Color(0x1AFFA733),
+    ink: Color(0xFFFFB347),
+    hairline: Color(0x33FFA733),
+    title: Color(0xFFFFA733),
+    artist: Color(0xFFFFD9A0),
+    wash: Colors.white,
+    heroShadow: Colors.white,
+    heroShadowOpacity: 0.25,
+    icon: Color(0xFFFFA733),
+    blurDim: 0.5,
+    field: Color(0xFF1A120A),
+  );
+
+  static Skin forTheme(AppTheme t,
+          [AppStyle style = AppStyle.classic,
+          TerminalTint tint = TerminalTint.phosphor]) =>
       switch ((style, t)) {
-        (AppStyle.terminal, _) => terminalSkin,
+        (AppStyle.terminal, _) =>
+          tint == TerminalTint.amber ? terminalAmberSkin : terminalSkin,
         (AppStyle.classic, AppTheme.light) => lightSkin,
         (AppStyle.classic, AppTheme.dark) => darkSkin,
         (AppStyle.xmb, AppTheme.light) => xmbLightSkin,
@@ -220,20 +244,23 @@ class Skin {
 
   /// Blend of the skins: [dark] picks light/dark, [xmb] Wave, [terminal]
   /// Terminal.
-  static Skin mix(double dark, double xmb, [double terminal = 0]) => lerp(
-      lerp(lerp(lightSkin, darkSkin, dark),
-          lerp(xmbLightSkin, xmbDarkSkin, dark), xmb),
-      terminalSkin,
-      terminal);
+  static Skin mix(double dark, double xmb,
+          [double terminal = 0, double amber = 0]) =>
+      lerp(
+          lerp(lerp(lightSkin, darkSkin, dark),
+              lerp(xmbLightSkin, xmbDarkSkin, dark), xmb),
+          lerp(terminalSkin, terminalAmberSkin, amber),
+          terminal);
 
   /// The current (possibly mid-animation) skin.
   static Skin of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<_SkinScope>();
     if (scope != null) return scope.skin;
     // Outside a SkinHost (tests): follow the theme setting directly.
-    final (theme, style) = context.select<SettingsController,
-        (AppTheme, AppStyle)>((s) => (s.theme, s.style));
-    return forTheme(theme, style);
+    final (theme, style, tint) = context.select<SettingsController,
+        (AppTheme, AppStyle, TerminalTint)>(
+            (s) => (s.theme, s.style, s.terminalTint));
+    return forTheme(theme, style, tint);
   }
 
   SystemUiOverlayStyle get systemBars => SystemUiOverlayStyle(
@@ -288,8 +315,12 @@ class _SkinHostState extends State<SkinHost> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final (userDark, style) = context.select<SettingsController,
-        (bool, AppStyle)>((s) => (s.theme == AppTheme.dark, s.style));
+    final (userDark, style, tint) = context.select<SettingsController,
+        (bool, AppStyle, TerminalTint)>(
+            (s) => (s.theme == AppTheme.dark, s.style, s.terminalTint));
+    final amber = tint == TerminalTint.amber;
+    // Terminal widgets read their colours from here.
+    TerminalTuning.amber = amber;
     final xmbStyle = style == AppStyle.xmb;
     final ambient = context.select<PlayerController, bool>((p) => p.ambient);
     final darkTarget = userDark || ambient ? 1.0 : 0.0;
@@ -309,7 +340,7 @@ class _SkinHostState extends State<SkinHost> with TickerProviderStateMixin {
     return AnimatedBuilder(
       animation: Listenable.merge([d, x, tm]),
       builder: (context, _) {
-        final skin = Skin.mix(d.value, x.value, tm.value);
+        final skin = Skin.mix(d.value, x.value, tm.value, amber ? 1 : 0);
         return _SkinScope(skin: skin, child: widget.builder(context, skin));
       },
     );
@@ -325,5 +356,6 @@ class _SkinScope extends InheritedWidget {
   bool updateShouldNotify(_SkinScope old) =>
       old.skin.darkness != skin.darkness ||
       old.skin.night != skin.night ||
-      old.skin.xmb != skin.xmb;
+      old.skin.xmb != skin.xmb ||
+      old.skin.ink != skin.ink;
 }
