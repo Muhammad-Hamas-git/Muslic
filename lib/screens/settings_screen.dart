@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
                       AppStyle.classic => 'Plain background',
                       AppStyle.xmb => 'Moving wave and sparkles behind everything',
                       AppStyle.terminal =>
-                        'Green CRT screen with a TV that slides out',
+                        'CRT screen with a TV that slides out',
                     },
                     below: _Segmented<AppStyle>(
                       expand: true,
