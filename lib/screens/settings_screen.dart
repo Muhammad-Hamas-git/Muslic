@@ -108,7 +108,6 @@ class SettingsScreen extends StatelessWidget {
                         onChanged: settings.setTheme,
                       ),
                     ),
-                  ),
                   _SwitchRow(
                     title: 'Scroll sound',
                     subtitle: 'A soft click as songs pass in the carousel',
